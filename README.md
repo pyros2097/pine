@@ -2,6 +2,7 @@
 Early draft/designs of a programming language I want to create
 
 Frontend: PEG.js, ANTLR 4, YACC
+
 Backend: LLVM
 
 ## Imports/Packages
@@ -17,6 +18,11 @@ require {
 
 ## Package Management
 Something like npm, Project Specific
+
+## Functions/Closures
+1. camelCase
+2. Currying
+3. Partials
 
 ## Interfaces
 Composition over direct inheritance
@@ -34,19 +40,59 @@ Composition over direct inheritance
 9. Loose typing local variables
 10. No @ symbol for this, works like java
 11. No automatic returns/ Make it explicit
+12. Pascal Case
 ```coffee
 class Example
 
-  constructor: (_a, _b) ->
+  constructor: (_a :int, _b : int) ->
     a = _a  # wrapped in getters and setters automatically this can be overridden
     b = _b
     
   calculate: (min: int) :int ->
-    require min > 0 // contracts
+    require min > 0 # contracts
     result = Math.random(min)
     ensure result > 0
     return result
+    
+Example{a: 10, b: 10} or Example(a, b)
+
+# So we can have a declarative interface to almost all libraries like this
+Window{
+  x: 0,
+  y: 0
+  w: 400
+  h: 300
+  children: [
+    VBox{
+      children: [
+        Label{
+          text: 'This is my title'
+        },
+        Button{
+          text: 'Click me'
+          onClick: (event: Event) ->
+            log.debug event.type
+        }
+      ]
+    }
+  ]
+}
 ```
+
+## Switch
+Must be easy to use
+```coffee
+switch code
+| 1 -> log('1')
+| 4, 5 -> log('test)
+| 7 -> {
+|   logs
+| }
+| default -> error
+```
+# Standard Library
+
+## Math
 
 ## Streams
 A major part in std lib. All long operations must use streams. Need to improve error handling and sync streams
