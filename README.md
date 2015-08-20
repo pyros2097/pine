@@ -79,10 +79,10 @@ Window{
 }
 ```
 
-## Switch
+## Match
 Must be easy to use
 ```coffee
-switch code
+match code
 | 1 -> log('1')
 | 4, 5 -> log('test)
 | 7 -> {
@@ -93,6 +93,27 @@ switch code
 # Standard Library
 
 ## Math
+
+## Http
+
+## Crypto
+
+## Collections
+1. Arrays
+2. Map
+3. Sets
+4. WeakMaps
+5. Lists
+6. or everything can be a map
+
+## Net
+
+## Dns
+
+## OpenGL
+
+## Cross platform GL layer and UI based on libGDX
+
 
 ## Streams
 A major part in std lib. All long operations must use streams. Need to improve error handling and sync streams
