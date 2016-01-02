@@ -55,7 +55,7 @@ class Example
   let r: Number
   let k: Number|None
 
-  constructor: (_a: Number, _b : Number) ->
+  init: (_a: Number, _b : Number) ->
     a = _a  # wrapped in getters and setters automatically this can be overridden
     b = _b
     
