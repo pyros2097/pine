@@ -7,6 +7,8 @@ No Globals(maybe)
 Reduce Capital Letters (unlike go)
 Reduce using Shift Key
 
+No Math Library, maybe everything should be encapsulated within Number class.
+
 ## Syntax
 The compiler will format all code and also on lint errors fail. They may be separate processes though. The standard case is camelCase and no other.
 
@@ -47,7 +49,7 @@ Try to implement much of this as classes like java, pony makes it easier to unde
 10. No @ symbol for this, works like java
 11. No automatic returns/ Make it explicit
 12. Pascal Case
-```coffee
+```pony
 class Example
   let x: String
   let y: String
@@ -55,13 +57,13 @@ class Example
   let r: Number
   let k: Number|None
 
-  init: (_a: Number, _b : Number) ->
+  fun init(_a: Number, _b : Number) =>
     a = _a  # wrapped in getters and setters automatically this can be overridden
     b = _b
     
-  calculate: (min: int) :int ->
+  fun calculate(min: Number) : Number =>
     require min > 0 # contracts
-    result = Math.random(min)
+    result = math.Random(min)
     ensure result > 0
     return result
     
