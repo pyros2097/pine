@@ -3,6 +3,9 @@ Early draft/designs of a programming language I want to create
 
 No Package Management (KISS, DRY), only one way to do things. You do something do it well don't reproduce stuff. Its Highly opionated. ex: cli, no-term, http. In go we mostly only need to use the std package. All new packages will need to request to be added.
 
+Fully Object Oriented no primitive types only objects to work on. Everything is an object.
+Whether to have functions as first class citizens.
+
 No Globals(maybe)
 Reduce Capital Letters (unlike go)
 Reduce using Shift Key
@@ -47,12 +50,16 @@ Try to implement much of this as classes like java, pony makes it easier to unde
 import sort
 import math
 
+const PI = 3.14
+cont Theta = 360
+cont E = 2.7
+
 class Example
   let x: String
   let y: String
   let z: String
   let r: Number
-  let k: Number|None
+  let k: Number | None
 
   fun init(_a: Number, _b : Number) =>
     """
