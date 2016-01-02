@@ -1,38 +1,38 @@
 # :yum: yum
 Early draft/designs of a programming language I want to create
 
-Frontend: PEG.js, ANTLR 4, YACC
-// Maybe Yacc+ since go supports it
-// Maybe implement in pony as pony has will have some what a similar syntax
+No Package Management (KISS, DRY), only one way to do things. You do something do it well don't reproduce stuff. Its Highly opionated. ex: cli, no-term, http. In go we mostly only need to use the std package. All new packages will need to request to be added.
 
-Backend: LLVM, Go (lisp implemented in go)
+No Globals(maybe)
+Reduce Capital Letters (unlike go)
+Reduce using Shift Key
+
+## Syntax
+The compiler will format all code and also on lint errors fail. They may be separate processes though. The standard case is camelCase and no other.
 
 ## Imports/Packages
 ```js
-use gui::Color
-use std::Text
-use std.Collections::{List, Hash}
-
-List()
-require {
-  colors
-  text
-  crypto
-  http
-  log
-}
+import sort
+import math
 ```
 
-## Package Management
-Something like npm, Project Specific
-
-## Functions/Closures
-1. camelCase
-2. Currying
-3. Partials
+## Type System
+Try to implement much of this as classes like java, pony makes it easier to understand
+0. None
+1. Number -> (dec64) includes all math function no need to math package and convert to u16,u32
+2. String -> includes all string functions including regex
+3. Array
+4. Map
+5. Class -> Includes enums/FSM
+6. Primitives ->
+7. Unions
+8. Attributes/tags
+9. Arrow functions
 
 ## Interfaces (#Important)
-Composition over direct inheritance
+1. Composition over direct inheritance
+2. Currying
+3. Partials
 
 ## Classes
 1. Single Inheritance Level
@@ -40,7 +40,7 @@ Composition over direct inheritance
 3. Decorators
 4. Annotations
 5. Can be used Declaratively like golang
-6. Unit Tests within methods
+6. Unit Tests within methods/or next to methods (maybe)
 7. Contracts
 8. Strong typing method signatures
 9. Loose typing local variables
@@ -65,7 +65,7 @@ class Example
     ensure result > 0
     return result
     
-Example{a: 10, b: 10} or Example(a, b)
+Example{a: 10, b: 10}
 
 # So we can have a declarative interface to almost all libraries like this
 Window{
@@ -88,12 +88,6 @@ Window{
     }
   ]
 }
-
-Window{x: 0, y: 0, w: 400, h: 300, children{
-  Window{x: 0, y: 0, children: {
-      Box{}
-    }}
-  }}
 ```
 
 ## Match
@@ -125,30 +119,12 @@ end
 3. Defacto JS Library Simulacra.js for rendering to web,desktop,mobile (Ex: GWT) using structs/classes mapped to html templates
 4. Defacto Flexbox with css for layouting for GUI components (facebook-css implementation)
 
-## Type System
-0. None
-1. Dec64 -> includes all math function no need to math package and convert to u16,u32
-2. String -> includes all string functions including regex
-3. Array
-4. Map
-5. Class -> Includes enums/FSM
-6. Primitives ->
-7. Type alias -> Unions
-8. Attributes
-9. JSON support
-
 Maybe primitves Number, String map should be lowercase like num, string, map, list, none.
 
 ## Streams
 A major part in std lib. All long operations must use streams. Need to improve error handling and sync streams. highlanderjs. Concurrent Streams.
 Streams are good for functional programming and channels and async and gui single event loop.
 Runtime use epoll or coroutines or MIO like event mechanism. Functional
-
-## Generators (Maybe not needed)
-Use them for default async behavior or await or make the language follow nodejs style callback support but the language encapsulates this with syntax like iced coffeescript or livescript
-
-Reduce Capital Letters (unlike go)
-Reduce using Shift Key
 
 Grammar (Taken from pony)
 ```antlr
@@ -411,22 +387,6 @@ nominal
   : ID ('.' ID)? typeargs? (cap | gencap)? ('^' | '!')?
   ;
 
-gencap
-  : '#read'
-  | '#send'
-  | '#share'
-  | '#any'
-  ;
-
-cap
-  : 'iso'
-  | 'trn'
-  | 'ref'
-  | 'val'
-  | 'box'
-  | 'tag'
-  ;
-
 typeargs
   : '[' type (',' type)* ']'
   ;
@@ -606,28 +566,4 @@ UNICODE2_ESC
   : '\\' 'U' HEX HEX HEX HEX HEX HEX
   ;
 ```
-
-## License
-
-The MIT License (MIT)
-
-Copyright (c) 2015 pyros2097
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to u-se, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
 
