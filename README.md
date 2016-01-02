@@ -10,13 +10,7 @@ Reduce using Shift Key
 No Math Library, maybe everything should be encapsulated within Number class.
 
 ## Syntax
-The compiler will format all code and also on lint errors fail. They may be separate processes though. The standard case is camelCase and no other.
-
-## Imports/Packages
-```js
-import sort
-import math
-```
+The compiler will format all code and also on lint errors fail. They may be separate processes though. The standard case is camelCase and no other. 2 Spaces or tab width = 2 for indentation.
 
 ## Type System
 Try to implement much of this as classes like java, pony makes it easier to understand
@@ -50,6 +44,9 @@ Try to implement much of this as classes like java, pony makes it easier to unde
 11. No automatic returns/ Make it explicit
 12. Pascal Case
 ```pony
+import sort
+import math
+
 class Example
   let x: String
   let y: String
@@ -58,14 +55,23 @@ class Example
   let k: Number|None
 
   fun init(_a: Number, _b : Number) =>
-    a = _a  # wrapped in getters and setters automatically this can be overridden
+    """
+    wrapped in getters and setters automatically this can be overridden
+    """
+    a = _a
     b = _b
     
-  fun calculate(min: Number) : Number =>
+  fun calculate(min: Number): Number =>
+    '''
+    Test Doc
+    '''
     require min > 0 # contracts
     result = math.Random(min)
     ensure result > 0
     return result
+    
+  nextPos(hasNext: Bool): Number =>
+    return 4
     
 Example{a: 10, b: 10}
 
