@@ -2,6 +2,11 @@
 Early draft/designs of a programming language I want to create
 
 No Package Management (KISS, DRY), only one way to do things. You do something do it well don't reproduce stuff. Its Highly opionated. ex: cli, no-term, http. In go we mostly only need to use the std package. All new packages will need to request to be added.
+All std packages will be in a separate repo in the same organization.
+Third party packages will also have the same convention and the oyrganization will act as the registry and optimize it using some generated json file or something.
+This is so that it is modular and that each package can be updated separately.
+
+Maybe integrated into vim completely.
 
 Fully Object Oriented no primitive types only objects to work on. Everything is an object.
 Whether to have functions as first class citizens.
@@ -10,23 +15,34 @@ No Globals(maybe)
 Reduce Capital Letters (unlike go)
 Reduce using Shift Key
 
-No Math Library, maybe everything should be encapsulated within Number class.
+No Math Library, Everything should be encapsulated within Number class like pony.
 
 ## Syntax
+PEG Parser with integrated lexing and maybe incremental compiling.
 The compiler will format all code and also on lint errors fail. They may be separate processes though. The standard case is camelCase and no other. 2 Spaces or tab width = 2 for indentation.
+
+For faster compilation maybe the compiler will only check the current package
+source and does not check whether the function exists in other packages.
+This type checking should be done by the gocode like daemon within the editor
+this will speed up compilation time (maybe).
+
+The linter, formatter, compiler all will be within itself. The language should be very strict and highly opionated to and must be like a single person use case. It cannot be diverged from the de-facto standard layout.
 
 ## Type System
 Try to implement much of this as classes like java, pony makes it easier to understand
-0. None
-1. Number -> (dec64) includes all math function no need to math package and convert to u16,u32
-2. String -> includes all string functions including regex
+0. None 
+1. Number -> (dec64) includes all math function no need to have a separate math package and has functions for type convertion to u16, u32 (maybe as this might not be needed for FFI we can and should be able to automatically find its value)
+2. String -> includes all string functions including regex, strings
 3. Array
 4. Map
 5. Class -> Includes enums/FSM
 6. Primitives ->
 7. Unions
-8. Attributes/tags
+8. Attributes/tags (maybe)
 9. Arrow functions
+10. JSON as first class data storage format (maybe)
+11. Byte
+12. YOB/TOB (similar to gob)
 
 ## Interfaces (#Important)
 1. Composition over direct inheritance
@@ -35,17 +51,22 @@ Try to implement much of this as classes like java, pony makes it easier to unde
 
 ## Classes
 1. Single Inheritance Level
-2. Static Methods
-3. Decorators
-4. Annotations
-5. Can be used Declaratively like golang
-6. Unit Tests within methods/or next to methods (maybe)
+2. Static Methods (Maybe no primitives seem better)
+3. Decorators //maybe
+4. Annotations // maybe
+5. Should be used Declaratively like golang
+6. Unit Tests within methods/or next to methods (maybe) or classes like pony
 7. Contracts
 8. Strong typing method signatures
 9. Loose typing local variables
 10. No @ symbol for this, works like java
-11. No automatic returns/ Make it explicit
-12. Pascal Case
+11. Pascal Case
+
+## Variables
+1. Snake Case or Camel Case decide (pony looks good)
+2. Mutable/Immutable
+3. let or var
+4. local/ global (maybe no globals at all only const)
 ```pony
 import sort
 import math
@@ -55,11 +76,11 @@ cont Theta = 360
 cont E = 2.7
 
 class Example
-  let x: String
-  let y: String
-  let z: String
-  let r: Number
-  let k: Number | None
+  has x: String
+  has y: String
+  has z: String
+  has r: Number
+  has k: Number | None
 
   fun init(_a: Number, _b : Number) =>
     """
@@ -107,7 +128,7 @@ Window{
 
 ## Match
 Must be easy to use
-```coffee
+```pony
 match code
 | 1 -> log('1')
 | 4, 5 -> log('test)
@@ -127,19 +148,45 @@ for i in range
 end
 ```
 # Standard Library
+Inbuilt Support for graphql and relay including a single store.
+Maybe integrate math features like github.com/non/spire
 
 ## JS
 1. Cross platform GL Layer (glium) and NUI based on libGDX or kivy
 2. Convert transpile classes/to js classes or create a js runtime similar to scala.js or Dart or that Intellij lang or clojure
 3. Defacto JS Library Simulacra.js for rendering to web,desktop,mobile (Ex: GWT) using structs/classes mapped to html templates
 4. Defacto Flexbox with css for layouting for GUI components (facebook-css implementation)
+5. Implement DOM model for graphics rendering for easier cross platform coding.
+6.python zodb or atom or graphene
 
-Maybe primitves Number, String map should be lowercase like num, string, map, list, none.
+## Concurrency
+1. libmill
+2. licpcl
+4. One Coroutine frameworks on github
+5. Single Event Loop (using coroutines or maybe a message queue or streams)
+6. Async await or yeild resume
 
 ## Streams
 A major part in std lib. All long operations must use streams. Need to improve error handling and sync streams. highlanderjs. Concurrent Streams.
 Streams are good for functional programming and channels and async and gui single event loop.
 Runtime use epoll or coroutines or MIO like event mechanism. Functional
+
+## List of STD packages
+1. json (maybe integrated into class)
+2. http
+3. websocket
+4. jwt
+5. files
+6. term
+7. ui
+8. app
+9. opengl
+10. scrypt
+11. gzip
+12. csv
+13. gob
+14. cli
+15. 
 
 Grammar (Taken from pony)
 ```antlr
@@ -342,8 +389,8 @@ literal
   : 'this'
   | 'true'
   | 'false'
-  | INT
-  | FLOAT
+  | BYTE
+  | NUMBER
   | STRING
   ;
 
@@ -477,15 +524,13 @@ ID
   | '_' (LETTER | DIGIT | '_' | '\'')+
   ;
 
-INT
+Byte
   : DIGIT (DIGIT | '_')*
   | '0' 'x' (HEX | '_')+
-  | '0' 'b' (BINARY | '_')+
-  | '\'' CHAR_CHAR* '\''
   ;
 
-FLOAT
-  : DIGIT (DIGIT | '_')* ('.' DIGIT (DIGIT | '_')*)? EXP?
+Number
+  : DIGIT (DIGIT | '_')* ('.' DIGIT (DIGIT | '_')*)?
   ;
 
 STRING
@@ -522,20 +567,9 @@ NEWLINE
   ;
 
 fragment
-CHAR_CHAR
-  : ESC
-  | ~('\'' | '\\')
-  ;
-
-fragment
 STRING_CHAR
   : ESC
   | ~('"' | '\\')
-  ;
-
-fragment
-EXP
-  : ('e' | 'E') ('+' | '-')? (DIGIT | '_')+
   ;
 
 fragment
