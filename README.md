@@ -30,19 +30,19 @@ The linter, formatter, compiler all will be within itself. The language should b
 
 ## Type System
 Try to implement much of this as classes like java, pony makes it easier to understand
-0. None 
-1. Number -> (dec64) includes all math function no need to have a separate math package and has functions for type convertion to u16, u32 (maybe as this might not be needed for FFI we can and should be able to automatically find its value)
-2. String -> includes all string functions including regex, strings
-3. Array
-4. Map
-5. Class -> Includes enums/FSM
-6. Primitives ->
-7. Unions
-8. Attributes/tags (maybe)
-9. Arrow functions
-10. JSON as first class data storage format (maybe)
-11. Byte
-12. YOB/TOB (similar to gob)
+0. None  
+1. Number -> (dec64) includes all math function no need to have a separate math package and has functions for type convertion to u16, u32 (maybe as this might not be needed for FFI we can and should be able to automatically find its value)  
+2. String -> includes all string functions including regex, strings  
+3. Array(Maybe streams or like golang io.Reader/Writer)  
+4. Map  
+5. Class -> Includes enums/FSM 
+6. Primitives ->  
+7. Unions  
+8. Attributes/tags (maybe)  
+9. Arrow functions  
+10. JSON as first class data storage format (maybe)  
+11. Byte  
+12. YOB/TOB (similar to gob)  
 
 ## Interfaces (#Important)
 1. Composition over direct inheritance
