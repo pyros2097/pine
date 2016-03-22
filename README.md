@@ -17,6 +17,8 @@ Reduce using Shift Key
 
 No Math Library, Everything should be encapsulated within Number class like pony.
 
+No functions only classes and objects. Maybe static.
+
 ## Syntax
 PEG Parser with integrated lexing and maybe incremental compiling.
 The compiler will format all code and also on lint errors fail. They may be separate processes though. The standard case is camelCase and no other. 2 Spaces or tab width = 2 for indentation.
@@ -159,8 +161,10 @@ for i in range
 end
 ```
 # Standard Library
-Inbuilt Support for graphql and relay including a single store.
+Inbuilt Support for graphql and relay including a single store (Haxl caching)
 Maybe integrate math features like github.com/non/spire
+
+## Integrated Testing and Benchmarking methods (think cobra)
 
 ## JS
 1. Cross platform GL Layer (glium) and NUI based on libGDX or kivy
@@ -171,11 +175,8 @@ Maybe integrate math features like github.com/non/spire
 6.python zodb or atom or graphene
 
 ## Concurrency
-1. libmill
-2. licpcl
-4. One Coroutine frameworks on github
-5. Single Event Loop (using coroutines or maybe a message queue or streams)
-6. Async await or yeild resume
+1. Single Event Loop (message queue or streams)
+2. Async await or yeild resume
 
 ## Streams
 A major part in std lib. All long operations must use streams. Need to improve error handling and sync streams. highlanderjs. Concurrent Streams.
