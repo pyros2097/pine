@@ -44,7 +44,7 @@ Try to implement much of this as classes like java, pony makes it easier to unde
 11. Byte  
 12. YOB/TOB (similar to gob)  
 
-## Interfaces (#Important)
+## Traits
 1. Composition over direct inheritance
 2. Currying
 3. Partials
@@ -75,12 +75,23 @@ const PI = 3.14
 cont Theta = 360
 cont E = 2.7
 
-class Example
-  has x: String
-  has y: String
-  has z: String
-  has r: Number
-  has k: Number | None
+enum Result<T, E>
+  OK(T)
+  Err(E)
+  
+enum Option<T>
+  None
+  Some(T)
+
+trait Animal
+  fun HasLegs(): Bool
+
+class Example has Animal
+  var x: String
+  var y: String
+  var z: String
+  var r: Number
+  var k: Number | None
 
   fun init(_a: Number, _b : Number) =>
     """
