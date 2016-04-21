@@ -19,6 +19,8 @@ No Math Library, Everything should be encapsulated within Number class like pony
 
 No functions only classes and objects. Maybe static.
 
+Scripting support and can be compiled also. But default it should be a lot like power shell (i.e. shell scripting features inbuilt (ls, grep, sed, cut) and also possible to make complete console ui's using it.(only console for now)
+
 ## Syntax
 PEG Parser with integrated lexing and maybe incremental compiling.
 The compiler will format all code and also on lint errors fail. They may be separate processes though. The standard case is camelCase and no other. 2 Spaces or tab width = 2 for indentation.
