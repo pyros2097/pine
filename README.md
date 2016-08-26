@@ -1,34 +1,26 @@
 # :yum: yum
-Early draft/designs of a programming language I want to create
+Early draft/designs of a programming language I want to create.
 
-No Package Management (KISS, DRY), only one way to do things. You do something do it well don't reproduce stuff. Its Highly opionated. ex: cli, no-term, http. In go we mostly only need to use the std package. All new packages will need to request to be added.
-All std packages will be in a separate repo in the same organization.
-Third party packages will also have the same convention and the oyrganization will act as the registry and optimize it using some generated json file or something.
-This is so that it is modular and that each package can be updated separately.
+## Features
+1. No Package Management (KISS, DRY), only one way to do things. You do something do it well don't reproduce stuff. Its Highly opionated. ex: cli, no-term, http. In go we mostly only need to use the std package. All new packages will need to request to be added. All std packages will be in a separate repo in the same organization.
+Third party packages will also have the same convention and the organization will act as the registry and optimize it using some generated json file or something. This is so that it is modular and that each package can be updated separately.
+2. Fully Object Oriented no primitive types only objects to work on. Everything is an object (like pony or scala will use comp)
+Whether to have functions as first class citizens.No functions only classes and objects. Maybe static.
+iler hacks to make literals behave like objects)
+3. Maybe integrated into vim completely.
+4. No Globals(maybe)
+5. Proper Error Handling. Stream/Railway oriented design (Maybe)
 
-Maybe integrated into vim completely.
-
-Fully Object Oriented no primitive types only objects to work on. Everything is an object.
-Whether to have functions as first class citizens.
-
-No Globals(maybe)
-Reduce Capital Letters (unlike go)
-Reduce using Shift Key
-
-No Math Library, Everything should be encapsulated within Number class like pony.
-
-No functions only classes and objects. Maybe static.
-
-Scripting support and can be compiled also. But default it should be a lot like power shell (i.e. shell scripting features inbuilt (ls, grep, sed, cut) and also possible to make complete console ui's using it.(only console for now)
-
-## Syntax
+## Parsing
 PEG Parser with integrated lexing and maybe incremental compiling.
-The compiler will format all code and also on lint errors fail. They may be separate processes though. The standard case is camelCase and no other. 2 Spaces or tab width = 2 for indentation.
+The compiler will format all code and also on lint errors fail. They may be separate processes though. The standard case is camelCase and no other. 2 Spaces for indentation.
 
 For faster compilation maybe the compiler will only check the current package
 source and does not check whether the function exists in other packages.
 This type checking should be done by the gocode like daemon within the editor
-this will speed up compilation time (maybe).
+this will speed up compilation time (maybe). Inc
+remental Compilation (yeah as long as I can prouduce the same machine code every single time)
+Only vim support.
 
 The linter, formatter, compiler all will be within itself. The language should be very strict and highly opionated to and must be like a single person use case. It cannot be diverged from the de-facto standard layout.
 
@@ -53,24 +45,25 @@ Try to implement much of this as classes like java, pony makes it easier to unde
 2. Currying
 3. Partials
 
-## Classes
+## Enums
+1. FSM
+
+## Classes (Declared Pascal Case)
 1. Single Inheritance Level
 2. Static Methods (Maybe no primitives seem better)
-3. Decorators //maybe
-4. Annotations // maybe
+3. Decorators (Maybe since we wont have relection it will be good for running before functions)
+4. Annotations (Maybe)
 5. Should be used Declaratively like golang
 6. Unit Tests within methods/or next to methods (maybe) or classes like pony
 7. Contracts
 8. Strong typing method signatures
 9. Loose typing local variables
 10. No @ symbol for this, works like java
-11. Pascal Case
 
-## Variables
-1. Snake Case or Camel Case decide (pony looks good)
-2. Mutable/Immutable
-3. let or var
-4. local/ global (maybe no globals at all only const)
+## Variables (Declared Snake Case or Camel Case decide (pony looks good))
+1. Mutable/Immutable
+2. let or var
+3. local/ global (maybe no globals at all only const)
 ```pony
 import sort
 import math
@@ -154,14 +147,40 @@ else
   error
 end
 
-try
-catch Exception
-end
-for cond
-end
-for i in range
-end
+enum Test
+  a = 13
+  b
+  c
+  d
+
+enum Result
+  Success
+  Failure(err)
+
+  unwrap: ->
+    os.exit(1)
+  unwrapElse: ->
+  string: String -> if Failure(err) "#{err}" else base.string()
+
+
+trait IsAlive
+  alive(): Bool
+
+stream A String
+Array[String]
+
+class Test
+  buffer: Buffer
+  state: Test
+
+  init: ()->
+    buffer.write("")
+    buffer.write("")
+    buffer.write("")
+
+  del: ()->
 ```
+
 # Standard Library
 Inbuilt Support for graphql and relay including a single store (Haxl caching)
 Maybe integrate math features like github.com/non/spire
@@ -200,7 +219,94 @@ Runtime use epoll or coroutines or MIO like event mechanism. Functional
 12. csv
 13. gob
 14. cli
-15. 
+
+# The Yum Language Reference
+
+Literals
+1.Number Literal
+2.String Literal
+3.Boolean Literal
+3.Byte Literal
+4.Character Literal
+
+Safe Functions
+Unsafe Functions
+
+Types
+1.Type Aliases
+2.Struct
+3.Enum
+4.Class
+5.Trait
+
+Expresssions
+Operators
+```
+1.and
+2.or
+3.xor
+4.not
+5.==
+6.!=
+7.>=
+8.>
+9.<
+10.<=
+11.>>
+12.<<
+13.+
+14.-
+15./
+16.*
+```
+Some/Most of these operators are implemented as operator overloading so it makes it easier for the compiler to call these functions or inline them or something. (So we wont need to make any change for our number class)
+
+Loops
+```
+1. Infinite Loop
+for
+end
+2. Loop with Condition
+for cond
+end
+3. Loop within an range
+for i in range
+end
+4. Loop over a 1D array
+for i in [1, 2, 3, 4, 5]
+end
+5. Loop over a 2D array
+for i, j in [[1, 2, 3], [4, 5, 6]]
+end
+5. Loop over a map
+for k, v in {a: "b", c: "d"}
+end
+```
+lambdas
+```
+class MyDispatcher
+  work: func(a: Number)
+  
+Dispatcher{
+  work: fun(a: Number) -> a + 5
+}
+```
+match
+```
+match code
+| 1 -> log('1')
+| 4, 5 -> log('test)
+| 7 -> {
+|   logs
+| }
+else
+  0
+end
+```
+return
+
+Memory Model
+`
 
 Grammar (Taken from pony)
 ```antlr
@@ -228,7 +334,7 @@ use_ffi
   ;
 
 class_def
-  : ('type' | 'interface' | 'trait' | 'primitive' | 'struct' | 'class' | 'actor') '@'? cap? ID typeparams? ('is' type)? STRING? members
+  : ('type' | 'trait' | 'struct' | 'class' ) '@'? cap? ID typeparams? ('is' type)? STRING? members
   ;
 
 members
@@ -240,7 +346,7 @@ field
   ;
 
 method
-  : ('fun' | 'be' | 'new') cap? ID typeparams? ('(' | LPAREN_NEW) params? ')' (':' type)? '?'? STRING? ('if' rawseq)? ('=>' rawseq)?
+  : ('fun') cap? ID typeparams? ('(' | LPAREN_NEW) params? ')' (':' type)? '?'? STRING? ('if' rawseq)? ('=>' rawseq)?
   ;
 
 rawseq
@@ -266,7 +372,7 @@ semiexpr
   ;
 
 jump
-  : ('return' | 'break' | 'continue' | 'error' | 'compile_intrinsic' | 'compile_error') rawseq?
+  : ('return' | 'break' | 'continue' | 'compile_intrinsic' | 'compile_error') rawseq?
   ;
 
 nextassignment
@@ -294,12 +400,8 @@ nextterm
   | 'ifdef' infix 'then' rawseq (elseifdef | ('else' rawseq))? 'end'
   | 'match' rawseq caseexpr* ('else' rawseq)? 'end'
   | 'while' rawseq 'do' rawseq ('else' rawseq)? 'end'
-  | 'repeat' rawseq 'until' rawseq ('else' rawseq)? 'end'
   | 'for' idseq 'in' rawseq 'do' rawseq ('else' rawseq)? 'end'
   | 'with' (withelem (',' withelem)*) 'do' rawseq ('else' rawseq)? 'end'
-  | 'try' rawseq ('else' rawseq)? ('then' rawseq)? 'end'
-  | 'recover' cap? rawseq 'end'
-  | 'consume' cap? term
   | nextpattern
   ;
 
@@ -308,12 +410,8 @@ term
   | 'ifdef' infix 'then' rawseq (elseifdef | ('else' rawseq))? 'end'
   | 'match' rawseq caseexpr* ('else' rawseq)? 'end'
   | 'while' rawseq 'do' rawseq ('else' rawseq)? 'end'
-  | 'repeat' rawseq 'until' rawseq ('else' rawseq)? 'end'
   | 'for' idseq 'in' rawseq 'do' rawseq ('else' rawseq)? 'end'
   | 'with' (withelem (',' withelem)*) 'do' rawseq ('else' rawseq)? 'end'
-  | 'try' rawseq ('else' rawseq)? ('then' rawseq)? 'end'
-  | 'recover' cap? rawseq 'end'
-  | 'consume' cap? term
   | pattern
   ;
 
@@ -543,9 +641,14 @@ Byte
   | '0' 'x' (HEX | '_')+
   ;
 
+Boolean
+  : 'true'
+  | 'false'
+  ;
+  
 Number
   : DIGIT (DIGIT | '_')* ('.' DIGIT (DIGIT | '_')*)?
-  ;
+  ;
 
 STRING
   : '"' STRING_CHAR* '"'
@@ -603,7 +706,7 @@ DIGIT
 
 fragment
 HEX
-  : DIGIT | 'a'..'f' | 'A'..'F' // Only small letters
+  : DIGIT | 'a'..'f'
   ;
 
 fragment

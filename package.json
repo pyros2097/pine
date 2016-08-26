@@ -1,0 +1,27 @@
+{
+  "name": "yum",
+  "version": "1.0.0",
+  "description": "Early draft/designs of a programming language I want to create.",
+  "dependencies": {},
+  "devDependencies": {
+    "pegjs": "0.9.0"
+  },
+  "scripts": {
+	"start": "node src/main.js",
+	"build": "pegjs src/grammar.pegjs",
+    "test": "ava"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pyros2097/yum.git"
+  },
+  "keywords": [
+    "yum"
+  ],
+  "author": "pyros2097",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/pyros2097/yum/issues"
+  },
+  "homepage": "https://github.com/pyros2097/yum#readme"
+}
