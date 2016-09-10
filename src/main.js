@@ -1,3 +1,8 @@
-var Parser = require("./grammar.js")
+const fs = require('fs')
+const peg = require('pegjs')
 
-console.log(Parser.parse("2+5"))
+var parser = peg.generate(fs.readFileSync('./yum.pegjs'))
+
+parser.parse
+
+

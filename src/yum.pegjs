@@ -78,10 +78,7 @@ SourceCharacter
   = .
 
 WhiteSpace "whitespace"
-  = "\t"
-  / "\v"
-  / "\f"
-  / " "
+  = " "
 
 LineTerminator
   = [\n\r\u2028\u2029]
@@ -124,49 +121,35 @@ IdentifierPart
 
 ReservedWord
   = Keyword
-  / NullLiteral
   / BooleanLiteral
 
 Keyword
   = BreakToken
   / CaseToken
-  / CatchToken
   / ContinueToken
   / DebuggerToken
   / DefaultToken
   / DoToken
   / ElseToken
-  / FinallyToken
   / ForToken
   / FunctionToken
   / IfToken
   / InstanceofToken
   / InToken
-  / NewToken
   / ReturnToken
   / SwitchToken
-  / ThisToken
-  / ThrowToken
-  / TryToken
-  / TypeofToken
   / VarToken
   / WhileToken
   / WithToken
   / ConstToken
   / EnumToken
-  / ExtendsToken
   / ImportToken
-  / SuperToken
   / ClassToken
 
 Literal
-  = NullLiteral
-  / BooleanLiteral
+  = BooleanLiteral
   / NumericLiteral
   / StringLiteral
-
-NullLiteral
-  = NullToken { return { type: "NullLiteral", value: null }; }
 
 BooleanLiteral
   = TrueToken  { return { type: "BooleanLiteral", value: true  }; }
@@ -233,7 +216,6 @@ EscapeCharacter
 
 BreakToken      = "break"      !IdentifierPart
 CaseToken       = "case"       !IdentifierPart
-CatchToken      = "catch"      !IdentifierPart
 ClassToken      = "class"      !IdentifierPart
 ConstToken      = "const"      !IdentifierPart
 ContinueToken   = "continue"   !IdentifierPart
@@ -243,27 +225,16 @@ DoToken         = "do"         !IdentifierPart
 ElseToken       = "else"       !IdentifierPart
 EndToken        = "end"        !IdentifierPart
 EnumToken       = "enum"       !IdentifierPart
-ExtendsToken    = "extends"    !IdentifierPart
 FalseToken      = "false"      !IdentifierPart
-FinallyToken    = "finally"    !IdentifierPart
 ForToken        = "for"        !IdentifierPart
 FunctionToken   = "function"   !IdentifierPart
-GetToken        = "get"        !IdentifierPart
 IfToken         = "if"         !IdentifierPart
 ImportToken     = "import"     !IdentifierPart
 InstanceofToken = "instanceof" !IdentifierPart
 InToken         = "in"         !IdentifierPart
-NewToken        = "new"        !IdentifierPart
-NullToken       = "null"       !IdentifierPart
 ReturnToken     = "return"     !IdentifierPart
-SetToken        = "set"        !IdentifierPart
-SuperToken      = "super"      !IdentifierPart
 SwitchToken     = "switch"     !IdentifierPart
-ThisToken       = "this"       !IdentifierPart
-ThrowToken      = "throw"      !IdentifierPart
 TrueToken       = "true"       !IdentifierPart
-TryToken        = "try"        !IdentifierPart
-TypeofToken     = "typeof"     !IdentifierPart
 VarToken        = "var"        !IdentifierPart
 WhileToken      = "while"      !IdentifierPart
 WithToken       = "with"       !IdentifierPart
@@ -290,8 +261,7 @@ EOF
 /* ----- A.3 Expressions ----- */
 
 PrimaryExpression
-  = ThisToken { return { type: "ThisExpression" }; }
-  / Identifier
+  = Identifier
   / Literal
   / ArrayLiteral
   / ObjectLiteral
@@ -416,12 +386,6 @@ MemberExpression
       });
     }
 
-NewExpression
-  = MemberExpression
-  / NewToken __ callee:NewExpression {
-      return { type: "NewExpression", callee: callee, arguments: [] };
-    }
-
 CallExpression
   = head:(
       callee:MemberExpression __ args:Arguments {
@@ -467,46 +431,6 @@ ArgumentList
 
 LeftHandSideExpression
   = CallExpression
-  / NewExpression
-
-PostfixExpression
-  = argument:LeftHandSideExpression _ operator:PostfixOperator {
-      return {
-        type:     "UpdateExpression",
-        operator: operator,
-        argument: argument,
-        prefix:   false
-      };
-    }
-  / LeftHandSideExpression
-
-PostfixOperator
-  = "++"
-  / "--"
-
-UnaryExpression
-  = PostfixExpression
-  / operator:UnaryOperator __ argument:UnaryExpression {
-      var type = (operator === "++" || operator === "--")
-        ? "UpdateExpression"
-        : "UnaryExpression";
-
-      return {
-        type:     type,
-        operator: operator,
-        argument: argument,
-        prefix:   true
-      };
-    }
-
-UnaryOperator
-  = $TypeofToken
-  / "++"
-  / "--"
-  / $("+" !"=")
-  / $("-" !"=")
-  / "~"
-  / "!"
 
 MultiplicativeExpression
   = head:UnaryExpression
@@ -573,9 +497,7 @@ EqualityExpressionNoIn
     { return buildBinaryExpression(head, tail); }
 
 EqualityOperator
-  = "==="
-  / "!=="
-  / "=="
+  = "=="
   / "!="
 
 BitwiseANDExpression
@@ -642,34 +564,6 @@ LogicalORExpressionNoIn
 
 LogicalOROperator
   = "or"
-
-ConditionalExpression
-  = test:LogicalORExpression __
-    "?" __ consequent:AssignmentExpression __
-    ":" __ alternate:AssignmentExpression
-    {
-      return {
-        type:       "ConditionalExpression",
-        test:       test,
-        consequent: consequent,
-        alternate:  alternate
-      };
-    }
-  / LogicalORExpression
-
-ConditionalExpressionNoIn
-  = test:LogicalORExpressionNoIn __
-    "?" __ consequent:AssignmentExpression __
-    ":" __ alternate:AssignmentExpressionNoIn
-    {
-      return {
-        type:       "ConditionalExpression",
-        test:       test,
-        consequent: consequent,
-        alternate:  alternate
-      };
-    }
-  / LogicalORExpressionNoIn
 
 AssignmentExpression
   = left:LeftHandSideExpression __
@@ -928,49 +822,6 @@ DefaultClause
         consequent: optionalList(extractOptional(consequent, 1))
       };
     }
-
-ThrowStatement
-  = ThrowToken _ argument:Expression EOS {
-      return { type: "ThrowStatement", argument: argument };
-    }
-
-TryStatement
-  = TryToken __ block:Block __ handler:Catch __ finalizer:Finally {
-      return {
-        type:      "TryStatement",
-        block:     block,
-        handler:   handler,
-        finalizer: finalizer
-      };
-    }
-  / TryToken __ block:Block __ handler:Catch {
-      return {
-        type:      "TryStatement",
-        block:     block,
-        handler:   handler,
-        finalizer: null
-      };
-    }
-  / TryToken __ block:Block __ finalizer:Finally {
-      return {
-        type:      "TryStatement",
-        block:     block,
-        handler:   null,
-        finalizer: finalizer
-      };
-    }
-
-Catch
-  = CatchToken __ "(" __ param:Identifier __ ")" __ body:Block {
-      return {
-        type:  "CatchClause",
-        param: param,
-        body:  body
-      };
-    }
-
-Finally
-  = FinallyToken __ block:Block { return block; }
 
 DebuggerStatement
   = DebuggerToken EOS { return { type: "DebuggerStatement" }; }
