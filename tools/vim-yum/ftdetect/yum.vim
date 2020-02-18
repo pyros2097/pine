@@ -1,0 +1,1 @@
+au BufRead,BufNewFile *.yum set filetype=yum

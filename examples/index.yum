@@ -1,0 +1,31 @@
+package main
+
+import routes
+import html
+
+fun abc() -> int
+    println("hell0")
+end
+
+func Window(x: int, y: int width: int, height: int, children: []HTML) -> HTML {
+    return (
+        <div>
+            {children}
+        </div>
+    )
+}
+
+@route(Path="/", method="POST")
+fun index() -> Html
+    println("hell0")    
+    return
+        <Window x="1" y="2" width="480" height="800">
+            <Vbox>
+                <Text>This is text</Text>
+            </Vbox>
+            <Hbox>
+                <Text>This is text</Text>
+            </Hbox>
+        </Window>
+    
+end
