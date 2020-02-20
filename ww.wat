@@ -4,6 +4,13 @@
 ;;   (export "memory" (memory 0))
 ;;   (data (i32.const 8) "hello world\n")
 
+  (func $sub (export "sub") (param f64 f64) (result f64)
+    (f64.add
+        (local.get 0)
+        (local.get 1)
+    )
+  )
+
   (func $add (export "main") (param i32 i32) (result i32)
     (i32.add
         (local.get 0)
