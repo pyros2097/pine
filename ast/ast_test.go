@@ -34,7 +34,7 @@ func TestAst(t *testing.T) {
 		t.Run(fileName, func(t *testing.T) {
 			result := parseFile(t, fileName)
 			resultString := repr.String(result, repr.Indent("  "))
-			snapshotter.SnapshotTName(t, strings.Replace(fileName, ".pony", ".go", 1), resultString)
+			snapshotter.SnapshotTName(t, strings.Replace(fileName, ".yum", ".go", 1), resultString)
 		})
 	}
 }

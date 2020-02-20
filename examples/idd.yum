@@ -1,0 +1,28 @@
+environment:
+    x: 123
+    b: abc
+
+a: 123
+b: 123
+
+Abc = name: string data: string => int
+    println "Hello"
+    println "${name}"
+
+
+Window = x: int y: int width: int height: int children: html => html
+    <div>
+        {children}
+    </div>
+
+Index = => Html
+    println("hell0")    
+    <Window x="1" y="2" width="480" height="800">
+        <Vbox>
+            <Text>This is text</Text>
+        </Vbox>
+        <Hbox>
+            <Text>This is text</Text>
+        </Hbox>
+    </Window>
+    

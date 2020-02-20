@@ -106,7 +106,7 @@ type Entry struct {
 	Package *string            `"package" @Ident`
 	Imports []*ImportStatement `| @@`
 	Structs []*Struct          `| @@`
-	Funs    []*Fun             `| @@`
+	Funs    []*FunDecl         `| @@`
 	// Enums    []*Enum            `| @@`s
 	Typedefs []*Typedef `| @@`
 	// Consts     []*ConstAssignment `| @@`

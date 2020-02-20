@@ -15,6 +15,12 @@ func GenerateFunc(fun *ast.FunDecl) {
 func GenerateCode(w io.Writer, ast *ast.Ast) {
 	w.Write([]byte{0x00, 0x61, 0x73, 0x6d}) // WASM_BINARY_MAGIC
 	w.Write([]byte{0x01, 0x00, 0x00, 0x00}) // WASM_BINARY_VERSION
+
+	funcCount := 0
+	types := []byte{} // num types, func, num params
+	funcs := []byte{}
+	exports := []byte{}
+	funcBodys := []byte{}
 	for _, entry := range ast.Entries {
 		for _, importStmt := range entry.Imports {
 			if importStmt != nil {
@@ -25,31 +31,29 @@ func GenerateCode(w io.Writer, ast *ast.Ast) {
 				// sb.WriteString("\n")
 			}
 		}
+		// ; section "Type" (1)
+		// ; type 0
+
 		for _, fun := range entry.Funs {
-			// ; section "Type" (1)
-			// ; type 0
-			types := []byte{0x01, 0x60, byte(len(fun.Fun.Parameters))} // num types, func, num params
-			for _, v := range fun.Fun.Parameters {                     // i32, i32
+			types = append(types, 0x60, byte(len(fun.Parameters))) // num types, func, num params
+			for _, v := range fun.Parameters {                     // i32, i32
 				types = append(types, typeMap[v.Type.Name])
 			}
-			types = append(types, 0x01)                             // num results
-			types = append(types, typeMap[fun.Fun.ReturnType.Name]) //i32
-
-			w.Write([]byte{0x01, byte(len(types))}) // section code, section size
-			w.Write(types)
+			types = append(types, 0x01)                         // num results
+			types = append(types, typeMap[fun.ReturnType.Name]) //i32
 		}
 		for _, fun := range entry.Funs {
 			// ; section "Function" (3)
-			all := []byte{0x01, 0x00}             // num functions, function 0 signature index
-			w.Write([]byte{0x03, byte(len(all))}) // section code, section size
-			w.Write(all)
+			all := []byte{0x01, byte(funcCount)}        // num functions, function 0 signature index
+			funcs = append(funcs, 0x03, byte(len(all))) // section code, section size
+			funcs = append(funcs, all...)
 
 			// ; section "Export" (7)s
-			exports := []byte{0x01, byte(len(fun.Fun.Name))}   // num exports, name length
-			exports = append(exports, []byte(fun.Fun.Name)...) // func name
-			exports = append(exports, 0x00, 0x00)              // export kind, export func index
-			w.Write([]byte{0x07, byte(len(exports))})          // section code, section size
-			w.Write(exports)
+			eall := []byte{0x01, byte(len(fun.Name))}        // num exports, name length
+			eall = append(eall, []byte(fun.Name)...)         // func name
+			eall = append(eall, 0x00, 0x00)                  // export kind, export func index
+			exports = append(exports, 0x07, byte(len(eall))) // section code, section size
+			exports = append(exports, eall...)
 
 			//; section "Code" (10)
 			funcbody := []byte{
@@ -59,13 +63,20 @@ func GenerateCode(w io.Writer, ast *ast.Ast) {
 			}
 
 			func0 := []byte{0x00}
-			sec10 := []byte{0x01, byte(len(func0) + len(funcbody))}              // num functions,
-			w.Write([]byte{0x0a, byte(len(sec10) + len(func0) + len(funcbody))}) // section code, section size
-			w.Write(sec10)
-			w.Write(func0)
-			w.Write(funcbody)
+			sec10 := []byte{0x01, byte(len(func0) + len(funcbody))}                        // num functions,
+			funcBodys = append(funcBodys, 0x0a, byte(len(sec10)+len(func0)+len(funcbody))) // section code, section size
+			funcBodys = append(funcBodys, sec10...)
+			funcBodys = append(funcBodys, func0...)
+			funcBodys = append(funcBodys, funcbody...)
+			funcCount += 1
 		}
 	}
+	types = append([]byte{byte(funcCount)}, types...)
+	w.Write([]byte{0x01, byte(len(types))}) // section code, section size
+	w.Write(types)
+	w.Write(funcs)
+	w.Write(exports)
+	w.Write(funcBodys)
 }
 
 // 0000000: 0061 736d                                 ; WASM_BINARY_MAGIC
