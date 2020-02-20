@@ -4,7 +4,6 @@ func sub(a: float, b: float) -> float
   return a 
 end
 
-
 func main(a: int, b: int) -> int
   return a
 end

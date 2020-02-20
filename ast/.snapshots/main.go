@@ -1,12 +1,9 @@
 &ast.Ast{
   Pos: Position{Filename: "", Offset: 0, Line: 1, Column: 1},
-  Entries: []*ast.Entry{
-    &ast.Entry{
+  Packages: []*ast.Package{
+    &ast.Package{
       Pos: Position{Filename: "", Offset: 0, Line: 1, Column: 1},
-      Package: &"main",
-    },
-    &ast.Entry{
-      Pos: Position{Filename: "", Offset: 14, Line: 3, Column: 1},
+      Name: &"main",
       Funs: []*ast.FunDecl{
         &ast.FunDecl{
           Pos: Position{Filename: "", Offset: 14, Line: 3, Column: 1},
@@ -47,43 +44,38 @@
           },
           End: Position{Filename: "", Offset: 0, Line: 0, Column: 0},
         },
-      },
-    },
-    &ast.Entry{
-      Pos: Position{Filename: "", Offset: 70, Line: 8, Column: 1},
-      Funs: []*ast.FunDecl{
         &ast.FunDecl{
-          Pos: Position{Filename: "", Offset: 70, Line: 8, Column: 1},
+          Pos: Position{Filename: "", Offset: 69, Line: 7, Column: 1},
           Name: "main",
           Parameters: []*ast.MethodParameter{
             &ast.MethodParameter{
-              Pos: Position{Filename: "", Offset: 80, Line: 8, Column: 11},
+              Pos: Position{Filename: "", Offset: 79, Line: 7, Column: 11},
               ID: "a",
               Type: &ast.Type{
-                Pos: Position{Filename: "", Offset: 81, Line: 8, Column: 12},
+                Pos: Position{Filename: "", Offset: 80, Line: 7, Column: 12},
                 Name: "int",
               },
             },
             &ast.MethodParameter{
-              Pos: Position{Filename: "", Offset: 88, Line: 8, Column: 19},
+              Pos: Position{Filename: "", Offset: 87, Line: 7, Column: 19},
               ID: "b",
               Type: &ast.Type{
-                Pos: Position{Filename: "", Offset: 89, Line: 8, Column: 20},
+                Pos: Position{Filename: "", Offset: 88, Line: 7, Column: 20},
                 Name: "int",
               },
             },
           },
           ReturnType: &ast.ReturnType{
-            Pos: Position{Filename: "", Offset: 96, Line: 8, Column: 27},
+            Pos: Position{Filename: "", Offset: 95, Line: 7, Column: 27},
             Name: "int",
           },
           Body: []*ast.Statement{
             &ast.Statement{
-              Pos: Position{Filename: "", Offset: 105, Line: 9, Column: 3},
+              Pos: Position{Filename: "", Offset: 104, Line: 8, Column: 3},
               ReturnStatement: &ast.ReturnStatement{
-                Pos: Position{Filename: "", Offset: 105, Line: 9, Column: 3},
+                Pos: Position{Filename: "", Offset: 104, Line: 8, Column: 3},
                 ReturnLiteral: &ast.ReturnLiteral{
-                  Pos: Position{Filename: "", Offset: 112, Line: 9, Column: 10},
+                  Pos: Position{Filename: "", Offset: 111, Line: 8, Column: 10},
                   Literal: a,
                 },
               },

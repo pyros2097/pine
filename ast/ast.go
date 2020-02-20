@@ -24,91 +24,19 @@ func ParseFile(filename string) (*Ast, error) {
 	return ast, nil
 }
 
-// func (p *parser) parseFile() *ast.File {
-// 	if p.trace {
-// 		defer un(trace(p, "File"))
-// 	}
-
-// 	// Don't bother parsing the rest if we had errors scanning the first token.
-// 	// Likely not a Go source file at all.
-// 	if p.errors.Len() != 0 {
-// 		return nil
-// 	}
-
-// 	// package clause
-// 	doc := p.leadComment
-// 	pos := p.expect(token.PACKAGE)
-// 	// Go spec: The package clause is not a declaration;
-// 	// the package name does not appear in any scope.
-// 	ident := p.parseIdent()
-// 	if ident.Name == "_" && p.mode&DeclarationErrors != 0 {
-// 		p.error(p.pos, "invalid package name _")
-// 	}
-// 	p.expectSemi()
-
-// 	// Don't bother parsing the rest if we had errors parsing the package clause.
-// 	// Likely not a Go source file at all.
-// 	if p.errors.Len() != 0 {
-// 		return nil
-// 	}
-
-// 	p.openScope()
-// 	p.pkgScope = p.topScope
-// 	var decls []ast.Decl
-// 	if p.mode&PackageClauseOnly == 0 {
-// 		// import decls
-// 		for p.tok == token.IMPORT {
-// 			decls = append(decls, p.parseGenDecl(token.IMPORT, p.parseImportSpec))
-// 		}
-
-// 		if p.mode&ImportsOnly == 0 {
-// 			// rest of package body
-// 			for p.tok != token.EOF {
-// 				decls = append(decls, p.parseDecl(syncDecl))
-// 			}
-// 		}
-// 	}
-// 	p.closeScope()
-// 	assert(p.topScope == nil, "unbalanced scopes")
-// 	assert(p.labelScope == nil, "unbalanced label scopes")
-
-// 	// resolve global identifiers within the same file
-// 	i := 0
-// 	for _, ident := range p.unresolved {
-// 		// i <= index for current ident
-// 		assert(ident.Obj == unresolved, "object already resolved")
-// 		ident.Obj = p.pkgScope.Lookup(ident.Name) // also removes unresolved sentinel
-// 		if ident.Obj == nil {
-// 			p.unresolved[i] = ident
-// 			i++
-// 		}
-// 	}
-
-// 	return &ast.File{
-// 		Doc:        doc,
-// 		Package:    pos,
-// 		Name:       ident,
-// 		Decls:      decls,
-// 		Scope:      p.pkgScope,
-// 		Imports:    p.imports,
-// 		Unresolved: p.unresolved[0:i],
-// 		Comments:   p.comments,
-// 	}
-// }
-
 type Ast struct {
-	Pos     lexer.Position
-	Entries []*Entry `{ @@ }`
+	Pos      lexer.Position
+	Packages []*Package `{ @@ }`
 }
 
-type Entry struct {
+type Package struct {
 	Pos     lexer.Position
-	Package *string            `"package" @Ident`
-	Imports []*ImportStatement `| @@`
-	Structs []*Struct          `| @@`
-	Funs    []*FunDecl         `| @@`
-	// Enums    []*Enum            `| @@`s
-	Typedefs []*Typedef `| @@`
+	Name    *string            `"package" @Ident`
+	Imports []*ImportStatement `{ @@ }`
+	Structs []*Struct          `{ @@ }`
+	Funs    []*FunDecl         `{ @@ }`
+	// Enums    []*Enum            `| @@`
+	Typedefs []*Typedef `{ @@ }`
 	// Consts     []*ConstAssignment `| @@`
 }
 
