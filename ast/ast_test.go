@@ -38,14 +38,3 @@ func TestAst(t *testing.T) {
 		})
 	}
 }
-
-// return (
-// <Window x="1" y="2" width="480" height="800">
-// 	<Vbox>
-// 		<Text>This is text</Text>
-// 	</Vbox>
-// 	<Hbox>
-// 		<Text>This is text</Text>
-// 	</Hbox>
-// </Window>
-// )

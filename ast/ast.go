@@ -198,21 +198,14 @@ type ForIteratorStatement struct {
 }
 
 type ReturnStatement struct {
-	Pos           lexer.Position `"return"`
-	ReturnLiteral *ReturnLiteral `@@`
-}
-
-type ReturnLiteral struct {
-	Pos     lexer.Position
-	Literal *Literal `@@`
-	XmlDecl *XmlDecl `| @@`
+	Pos        lexer.Position `"return"`
+	Expression *Expression    `@@`
+	XmlDecl    *XmlDecl       `| @@`
 }
 
 type AssertStatement struct {
-	Pos      lexer.Position     `"assert"`
-	LHS      *AssignmentLiteral `@@`
-	Operator *Operator          `@@`
-	RHS      *AssignmentLiteral `@@`
+	Pos        lexer.Position `"assert"`
+	Expression *Expression    `@@`
 }
 
 type MapStatement struct {
@@ -242,6 +235,45 @@ type AssignmentLiteral struct {
 type Operator struct {
 	Pos   lexer.Position
 	Value string `@( "<=" | ">=" | "=""=" | "<" | ">" | "!=" )`
+}
+
+type Expression struct {
+	Equality *Equality `@@`
+}
+
+type Equality struct {
+	Comparison *Comparison `@@`
+	Op         string      `[ @( "!" "=" | "=" "=" )`
+	Next       *Equality   `  @@ ]`
+}
+
+type Comparison struct {
+	Addition *Addition   `@@`
+	Op       string      `[ @( ">" | ">" "=" | "<" | "<" "=" )`
+	Next     *Comparison `  @@ ]`
+}
+
+type Addition struct {
+	Multiplication *Multiplication `@@`
+	Op             string          `[ @( "-" | "+" )`
+	Next           *Addition       `  @@ ]`
+}
+
+type Multiplication struct {
+	Unary *Unary          `@@`
+	Op    string          `[ @( "/" | "*" )`
+	Next  *Multiplication `  @@ ]`
+}
+
+type Unary struct {
+	Op      string   `  ( @( "!" | "-" )`
+	Unary   *Unary   `    @@ )`
+	Primary *Primary `| @@`
+}
+
+type Primary struct {
+	Literal       *Literal    `@@`
+	SubExpression *Expression `| "(" @@ ")" `
 }
 
 // Literal is a "union" type, where only one matching value will be present.

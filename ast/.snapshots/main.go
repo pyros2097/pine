@@ -35,9 +35,20 @@
               Pos: Position{Filename: "", Offset: 54, Line: 4, Column: 3},
               ReturnStatement: &ast.ReturnStatement{
                 Pos: Position{Filename: "", Offset: 54, Line: 4, Column: 3},
-                ReturnLiteral: &ast.ReturnLiteral{
-                  Pos: Position{Filename: "", Offset: 61, Line: 4, Column: 10},
-                  Literal: a,
+                Expression: &ast.Expression{
+                  Equality: &ast.Equality{
+                    Comparison: &ast.Comparison{
+                      Addition: &ast.Addition{
+                        Multiplication: &ast.Multiplication{
+                          Unary: &ast.Unary{
+                            Primary: &ast.Primary{
+                              Literal: a,
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
                 },
               },
             },
@@ -74,9 +85,30 @@
               Pos: Position{Filename: "", Offset: 104, Line: 8, Column: 3},
               ReturnStatement: &ast.ReturnStatement{
                 Pos: Position{Filename: "", Offset: 104, Line: 8, Column: 3},
-                ReturnLiteral: &ast.ReturnLiteral{
-                  Pos: Position{Filename: "", Offset: 111, Line: 8, Column: 10},
-                  Literal: a,
+                Expression: &ast.Expression{
+                  Equality: &ast.Equality{
+                    Comparison: &ast.Comparison{
+                      Addition: &ast.Addition{
+                        Multiplication: &ast.Multiplication{
+                          Unary: &ast.Unary{
+                            Primary: &ast.Primary{
+                              Literal: a,
+                            },
+                          },
+                        },
+                        Op: "+",
+                        Next: &ast.Addition{
+                          Multiplication: &ast.Multiplication{
+                            Unary: &ast.Unary{
+                              Primary: &ast.Primary{
+                                Literal: b,
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
                 },
               },
             },
