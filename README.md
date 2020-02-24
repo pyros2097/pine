@@ -1,17 +1,434 @@
-# :yum: Yum
-Early draft/designs of a programming language I want to create.
+# The Yum Programming Language
+
+## Example
+
+```js
+import (
+    "std/routes"
+    "std/html"
+)
+
+@route(/about/{name}")
+func about(name string) -> Html {
+    return (
+        <Window x="1" y="2" width="480" height="800">
+            <VBox>
+                <Text>This is my title<Text>
+            </VBox>
+        </Window>
+    )
+}
+
+router(host: "localhost", port: 1234)
+```
+
+```js
+const name = "Bob"
+age := 20
+const large_number = 9999999999
+println(name)
+println(age)
+println(large_number)
+```
 
 ## Features
+
+### Power println
+
+```groovy
+println complexObject
+```
+
+### Power Assert
+
+```groovy
+assert x == 2
+
+
+// Output:
+//
+// Assertion failed:
+// assert x == 2
+//        | |
+//        1 false
+```
+
+### Power Mocks
+
+### Power Stubs
+
+### Null checking
+
+All values are default nullable/nilable you can make them non-nullable by using an exclamation mark after the type;
+
+```go
+func area(a int!, b float) {
+}
+```
+
+### Multiple returns and errors
+
+Documentation parses these errors in the func and lists them as errors the
+function can throw (something like throws in java)
+
+```go
+func area(x int) (string, error) {
+    if x < 0 {
+        return nil, error("invalid", "x")
+    }
+    return "${x+1}", nil
+}
+
+func main() error {
+    v := area() // if not handled the error is returned to the calling function like try() in golang
+
+    v, err := area()
+    if err != nil {
+        if err.name == "" {
+            println(err.message)
+        }
+        return err
+    }
+    println(v)
+    return nil
+}
+
+func main() error {
+    // Or handle the error like usual
+    v, err := area()
+    if err != nil {
+        if err.name == "" {
+            println(err.message)
+        }
+        return err
+    }
+    println(v)
+    return nil
+}
+
+```
+
+# Specification
+
+# Primitives types
+
+```go
+bool
+string
+int // thought redo these 3 types to decimal??
+float
+decimal
+byte
+string
+nil
+error
+```
+
+# Reference Types
+
+```go
+array
+map
+enum
+struct
+func
+```
+
+# Strings
+
+A string is a read-only array of bytes. String data is encoded using UTF-8. Strings are immutable. This means that the substring function is very efficient: no copying is performed, no extra allocations required.
+
+TODO: use double quotes or single quotes (pref for double since its standard)
+
+```golang
+name := "Bob"
+println("Hello, $name!") // `$` is used for string interpolation
+println(len(name))
+
+bobby := name + "by" // + is used to concatenate strings
+println(bobby) // ==> "Bobby"
+
+We have to either convert age to a string:
+age := 1
+println("age = $age")
+// primitives, structs have String() method builtin println works
+
+multiline = """
+"""
+```
+
+# Arrays
+
+```golang
+nums := []int[1, 2, 3]
+println(nums) // ==> [1, 2, 3]
+println(nums[1]) // ==> 2
+println(nums[10]) // ==> nil
+
+names := []string["Krabs"]
+names = append(names, "Spongebob") // which format to use
+names << "Patrick"
+println(len(names)) // ==> 3
+println(array.Contains(names, "Krabs")) // ==> true
+println(array.Contains(names, "Squidward")) // ==> false
+```
+
+# Maps
+
+Keys will always be strings. Keys are ordered by default.
+
+```golang
+nums := map[int]{
+    "one": 1,
+    "two": 2
+}
+nums["three"] = 4
+println(nums["one"]) // ==> "1"
+println(nums["infinity"]) // ==> nil
+```
+
+# Enums
+
+```golang
+type Direction =
+    | Left
+    | Right
+    | Up
+    | Down
+```
+
+Structs
+
+```golang
+struct User {
+    id string
+    name string
+    email string
+}
+```
+
+# Funcs
+
+### Support named args
+
+```golang
+func add(a int, b int) {
+}
+
+add(3, 5)
+add(b: 4, a: 1)
+```
+
+## Types
+
+```golang
+type Operator func(a int, b int) bool
+```
+
+# Conditional Statements
+
+## if/else if/ else
+
+```golang
+a := 10
+b := 20
+c := a > b ? 10 : a;
+if a < b {
+    println("$a < $b")
+} else if a > b {
+    println("$a > $b")
+} else {
+    println("$a == $b")
+}
+```
+
+## switch
+
+```golang
+match c {
+| 1 => _resize(y, x)
+| 2 => _processInput(c, x, y)
+| 3 => _processInput(c, x, y)
+| 4 => _processInput(c, x, y)
+| 255 => _exit(); break
+}
+
+switch c {
+  case 1:
+    x = 1
+  case 2:
+    x = 2
+  case 3:
+    x = 3
+  case 4: x = 4
+  case 255: x = 5
+  default: x = 0
+}
+```
+
+# Loops
+
+## Normal loops
+
+```golang
+for i := 0; i < 10; i++ {
+    println(i, v)
+}
+```
+
+## Infinite Loop
+
+```golang
+for {
+    println(i, v)
+}
+```
+
+## Loop with Condition
+
+```golang
+for x > 5 {
+    println(i, v)
+}
+```
+
+## Array Iteration
+
+```golang
+nums := [1, 2, 3]
+for i, v  := range nums {
+    println(i, v)
+}
+```
+
+## Map Iteration
+
+```golang
+data := map[string]{"name": "krab"}
+for k, v  := range nums {
+    println(k, v)
+}
+```
+
+# Keywords
+
+```golang
+break
+const
+continue
+else
+enum
+func
+for
+if
+import
+in
+switch
+package
+return
+struct
+type
+fallthrough
+```
+
+# Operators
+
+## Arithmetic Operators
+
+- \+ (addition)
+- \- (subtraction)
+- \* (multiplication)
+- / (division)
+- % (modulo)
+
+## Logical Operators
+
+- && (and)
+- || (or)
+- ! (not)
+
+## Comparison Operators
+
+- \> (gt)
+- <
+- />=
+- <=
+- ==
+- !=
+- ^
+
+## Assignment Operators
+
+- +=
+- -=
+- \*=
+- /=
+- %=
+
+## Operator Precedence
+
+<!-- 5 \* / % << >>
+
+4 + - | ^
+3 == != < <= > >=
+2 &&
+1 || -->
+
+<!--
+Thoughts builtin
+enum Boolean {
+    True
+    False
+
+    and(other) {
+        this && other
+    }
+
+    or(other) {
+        this || other
+    }s
+}
+
+flag := Boolean.true; -->
+
+# Docs
+
+```golang
+// Takes a, b
+func add(a int, b int) {
+
+}
+
+"""
+Takes a, b
+"""
+func add(a int, b int) {
+
+}
+
+/*
+    Takes a, b
+*/
+func add(a int, b int) {
+
+}
+```
+
+# OLD STUFF
+
+## Features
+
 1. No Package Management (KISS, DRY), only one way to do things. You do something do it well don't reproduce stuff. Its Highly opionated. ex: cli, no-term, http. In go we mostly only need to use the std package. All new packages will need to request to be added. All std packages will be in a separate repo in the same organization.
-Third party packages will also have the same convention and the organization will act as the registry and optimize it using some generated json file or something. This is so that it is modular and that each package can be updated separately.
+   Third party packages will also have the same convention and the organization will act as the registry and optimize it using some generated json file or something. This is so that it is modular and that each package can be updated separately.
 2. Fully Object Oriented no primitive types only objects to work on. Everything is an object (like pony or scala will use comp)
-Whether to have functions as first class citizens.No functions only classes and objects. Maybe static.
-iler hacks to make literals behave like objects)
+   Whether to have functions as first class citizens.No functions only classes and objects. Maybe static.
+   iler hacks to make literals behave like objects)
 3. Maybe integrated into vim completely.
 4. No Globals(maybe)
 5. Proper Error Handling. Stream/Railway oriented design (Maybe)
 
 ## Parsing
+
 PEG Parser with integrated lexing and maybe incremental compiling.
 The compiler will format all code and also on lint errors fail. They may be separate processes though. The standard case is camelCase and no other. 2 Spaces for indentation.
 
@@ -25,30 +442,35 @@ Only vim support.
 The linter, formatter, compiler all will be within itself. The language should be very strict and highly opionated to and must be like a single person use case. It cannot be diverged from the de-facto standard layout.
 
 ## Type System
+
 Try to implement much of this as classes like java, pony makes it easier to understand
-0. None  
-1. Number -> (dec64) includes all math function no need to have a separate math package and has functions for type convertion to u16, u32 (maybe as this might not be needed for FFI we can and should be able to automatically find its value)  
-2. String -> includes all string functions including regex, strings  
-3. Array(Maybe streams or like golang io.Reader/Writer)  
-4. Map  
-5. Class -> Includes enums/FSM 
-6. Primitives ->  
-7. Unions  
-8. Attributes/tags (maybe)  
-9. Arrow functions  
-10. JSON as first class data storage format (maybe)  
-11. Byte  
-12. YOB/TOB (similar to gob)  
+
+0. None
+1. Number -> (dec64) includes all math function no need to have a separate math package and has functions for type convertion to u16, u32 (maybe as this might not be needed for FFI we can and should be able to automatically find its value)
+1. String -> includes all string functions including regex, strings
+1. Array(Maybe streams or like golang io.Reader/Writer)
+1. Map
+1. Class -> Includes enums/FSM
+1. Primitives ->
+1. Unions
+1. Attributes/tags (maybe)
+1. Arrow functions
+1. JSON as first class data storage format (maybe)
+1. Byte
+1. YOB/TOB (similar to gob)
 
 ## Traits
+
 1. Composition over direct inheritance
 2. Currying
 3. Partials
 
 ## Enums
+
 1. FSM
 
 ## Classes (Declared Pascal Case)
+
 1. Single Inheritance Level
 2. Static Methods (Maybe no primitives seem better)
 3. Decorators (Maybe since we wont have relection it will be good for running before functions)
@@ -61,9 +483,11 @@ Try to implement much of this as classes like java, pony makes it easier to unde
 10. No @ symbol for this, works like java
 
 ## Variables (Declared Snake Case or Camel Case decide (pony looks good))
+
 1. Mutable/Immutable
 2. let or var
 3. local/ global (maybe no globals at all only const)
+
 ```pony
 import sort
 import math
@@ -75,7 +499,7 @@ cont E = 2.7
 enum Result<T, E>
   OK(T)
   Err(E)
-  
+
 enum Option<T>
   None
   Some(T)
@@ -96,7 +520,7 @@ class Example has Animal
     """
     a = _a
     b = _b
-    
+
   fun calculate(min: Number): Number =>
     '''
     Test Doc
@@ -105,10 +529,10 @@ class Example has Animal
     result = math.Random(min)
     ensure result > 0
     return result
-    
+
   nextPos(hasNext: Bool): Number =>
     return 4
-    
+
 Example{a: 10, b: 10}
 
 # So we can have a declarative interface to almost all libraries like this
@@ -135,7 +559,9 @@ Window{
 ```
 
 ## Match
+
 Must be easy to use
+
 ```pony
 match code
 | 1 -> log('1')
@@ -182,29 +608,34 @@ class Test
 ```
 
 # Standard Library
+
 Inbuilt Support for graphql and relay including a single store (Haxl caching)
 Maybe integrate math features like github.com/non/spire
 
 ## Integrated Testing and Benchmarking methods (think cobra)
 
 ## JS
+
 1. Cross platform GL Layer (glium) and NUI based on libGDX or kivy
 2. Convert transpile classes/to js classes or create a js runtime similar to scala.js or Dart or that Intellij lang or clojure
 3. Defacto JS Library Simulacra.js for rendering to web,desktop,mobile (Ex: GWT) using structs/classes mapped to html templates
 4. Defacto Flexbox with css for layouting for GUI components (facebook-css implementation)
 5. Implement DOM model for graphics rendering for easier cross platform coding.
-6.python zodb or atom or graphene
+   6.python zodb or atom or graphene
 
 ## Concurrency
+
 1. Single Event Loop (message queue or streams)
 2. Async await or yeild resume
 
 ## Streams
+
 A major part in std lib. All long operations must use streams. Need to improve error handling and sync streams. highlanderjs. Concurrent Streams.
 Streams are good for functional programming and channels and async and gui single event loop.
 Runtime use epoll or coroutines or MIO like event mechanism. Functional
 
 ## List of STD packages
+
 1. json (maybe integrated into class)
 2. http
 3. websocket
@@ -241,6 +672,7 @@ Types
 
 Expresssions
 Operators
+
 ```
 1.and
 2.or
@@ -259,9 +691,11 @@ Operators
 15./
 16.*
 ```
+
 Some/Most of these operators are implemented as operator overloading so it makes it easier for the compiler to call these functions or inline them or something. (So we wont need to make any change for our number class)
 
 Loops
+
 ```
 1. Infinite Loop
 for
@@ -282,16 +716,20 @@ end
 for k, v in {a: "b", c: "d"}
 end
 ```
+
 lambdas
+
 ```
 class MyDispatcher
   work: func(a: Number)
-  
+
 Dispatcher{
   work: fun(a: Number) -> a + 5
 }
 ```
+
 match
+
 ```
 match code
 | 1 -> log('1')
@@ -303,433 +741,3 @@ else
   0
 end
 ```
-return
-
-Memory Model
-`
-
-Grammar (Taken from pony)
-```antlr
-// ANTLR v3 grammar
-grammar pony;
-
-options
-{
-  output = AST;
-  k = 1;
-}
-
-// Parser
-
-module
-  : STRING? use* class_def* 
-  ;
-
-use
-  : 'use' (ID '=')? (STRING | use_ffi) ('if' infix)?
-  ;
-
-use_ffi
-  : '@' (ID | STRING) typeargs ('(' | LPAREN_NEW) params? ')' '?'?
-  ;
-
-class_def
-  : ('type' | 'trait' | 'struct' | 'class' ) '@'? cap? ID typeparams? ('is' type)? STRING? members
-  ;
-
-members
-  : field* method*
-  ;
-
-field
-  : ('var' | 'let' | 'embed') ID ':' type ('delegate' type)? ('=' infix)?
-  ;
-
-method
-  : ('fun') cap? ID typeparams? ('(' | LPAREN_NEW) params? ')' (':' type)? '?'? STRING? ('if' rawseq)? ('=>' rawseq)?
-  ;
-
-rawseq
-  : exprseq
-  | jump
-  ;
-
-exprseq
-  : assignment (semiexpr | nosemi)?
-  ;
-
-nextexprseq
-  : nextassignment (semiexpr | nosemi)?
-  ;
-
-nosemi
-  : nextexprseq
-  | jump
-  ;
-
-semiexpr
-  : ';' (exprseq | jump)
-  ;
-
-jump
-  : ('return' | 'break' | 'continue' | 'compile_intrinsic' | 'compile_error') rawseq?
-  ;
-
-nextassignment
-  : nextinfix ('=' assignment)?
-  ;
-
-assignment
-  : infix ('=' assignment)?
-  ;
-
-nextinfix
-  : nextterm antlr_0*
-  ;
-
-infix
-  : term antlr_1*
-  ;
-
-binop
-  : ('and' | 'or' | 'xor' | '+' | '-' | '*' | '/' | '%' | '<<' | '>>' | 'is' | 'isnt' | '==' | '!=' | '<' | '<=' | '>=' | '>') term
-  ;
-
-nextterm
-  : 'if' rawseq 'then' rawseq (elseif | ('else' rawseq))? 'end'
-  | 'ifdef' infix 'then' rawseq (elseifdef | ('else' rawseq))? 'end'
-  | 'match' rawseq caseexpr* ('else' rawseq)? 'end'
-  | 'while' rawseq 'do' rawseq ('else' rawseq)? 'end'
-  | 'for' idseq 'in' rawseq 'do' rawseq ('else' rawseq)? 'end'
-  | 'with' (withelem (',' withelem)*) 'do' rawseq ('else' rawseq)? 'end'
-  | nextpattern
-  ;
-
-term
-  : 'if' rawseq 'then' rawseq (elseif | ('else' rawseq))? 'end'
-  | 'ifdef' infix 'then' rawseq (elseifdef | ('else' rawseq))? 'end'
-  | 'match' rawseq caseexpr* ('else' rawseq)? 'end'
-  | 'while' rawseq 'do' rawseq ('else' rawseq)? 'end'
-  | 'for' idseq 'in' rawseq 'do' rawseq ('else' rawseq)? 'end'
-  | 'with' (withelem (',' withelem)*) 'do' rawseq ('else' rawseq)? 'end'
-  | pattern
-  ;
-
-withelem
-  : idseq '=' rawseq
-  ;
-
-caseexpr
-  : '|' pattern? ('if' rawseq)? ('=>' rawseq)?
-  ;
-
-elseifdef
-  : 'elseif' infix 'then' rawseq (elseifdef | ('else' rawseq))?
-  ;
-
-elseif
-  : 'elseif' rawseq 'then' rawseq (elseif | ('else' rawseq))?
-  ;
-
-idseq
-  : ID
-  | '_'
-  | ('(' | LPAREN_NEW) idseq (',' idseq)* ')'
-  ;
-
-nextpattern
-  : ('var' | 'let' | 'embed') ID (':' type)?
-  | nextparampattern
-  ;
-
-pattern
-  : ('var' | 'let' | 'embed') ID (':' type)?
-  | parampattern
-  ;
-
-nextparampattern
-  : ('not' | 'addressof' | MINUS_NEW | 'identityof') parampattern
-  | nextpostfix
-  ;
-
-parampattern
-  : ('not' | 'addressof' | '-' | MINUS_NEW | 'identityof') parampattern
-  | postfix
-  ;
-
-nextpostfix
-  : nextatom antlr_2*
-  ;
-
-postfix
-  : atom antlr_3*
-  ;
-
-call
-  : '(' positional? named? ')'
-  ;
-
-tilde
-  : '~' ID
-  ;
-
-dot
-  : '.' ID
-  ;
-
-nextatom
-  : ID
-  | literal
-  | LPAREN_NEW (rawseq | '_') tuple? ')'
-  | LSQUARE_NEW ('as' type ':')? rawseq (',' rawseq)* ']'
-  | 'object' cap? ('is' type)? members 'end'
-  | 'lambda' cap? typeparams? ('(' | LPAREN_NEW) params? ')' lambdacaptures? (':' type)? '?'? '=>' rawseq 'end'
-  | '@' (ID | STRING) typeargs? ('(' | LPAREN_NEW) positional? named? ')' '?'?
-  ;
-
-atom
-  : ID
-  | literal
-  | ('(' | LPAREN_NEW) (rawseq | '_') tuple? ')'
-  | ('[' | LSQUARE_NEW) ('as' type ':')? rawseq (',' rawseq)* ']'
-  | 'object' cap? ('is' type)? members 'end'
-  | 'lambda' cap? typeparams? ('(' | LPAREN_NEW) params? ')' lambdacaptures? (':' type)? '?'? '=>' rawseq 'end'
-  | '@' (ID | STRING) typeargs? ('(' | LPAREN_NEW) positional? named? ')' '?'?
-  ;
-
-literal
-  : 'this'
-  | 'true'
-  | 'false'
-  | BYTE
-  | NUMBER
-  | STRING
-  ;
-
-tuple
-  : ',' (rawseq | '_') (',' (rawseq | '_'))*
-  ;
-
-lambdacaptures
-  : ('(' | LPAREN_NEW) lambdacapture (',' lambdacapture)* ')'
-  ;
-
-lambdacapture
-  : ID (':' type)? ('=' infix)?
-  ;
-
-positional
-  : rawseq (',' rawseq)*
-  ;
-
-named
-  : 'where' namedarg (',' namedarg)*
-  ;
-
-namedarg
-  : ID '=' rawseq
-  ;
-
-type
-  : atomtype ('->' type)?
-  ;
-
-atomtype
-  : 'this'
-  | 'box'
-  | ('(' | LPAREN_NEW) (infixtype | '_') tupletype? ')'
-  | nominal
-  ;
-
-tupletype
-  : ',' (infixtype | '_') (',' (infixtype | '_'))*
-  ;
-
-infixtype
-  : type antlr_4*
-  ;
-
-isecttype
-  : '&' type
-  ;
-
-uniontype
-  : '|' type
-  ;
-
-nominal
-  : ID ('.' ID)? typeargs? (cap | gencap)? ('^' | '!')?
-  ;
-
-typeargs
-  : '[' type (',' type)* ']'
-  ;
-
-typeparams
-  : ('[' | LSQUARE_NEW) typeparam (',' typeparam)* ']'
-  ;
-
-params
-  : (param | '...') (',' (param | '...'))*
-  ;
-
-typeparam
-  : ID (':' type)? ('=' type)?
-  ;
-
-param
-  : (parampattern | '_') (':' type)? ('=' infix)?
-  ;
-
-antlr_0
-  : binop
-  | 'as' type
-  ;
-
-antlr_1
-  : binop
-  | 'as' type
-  ;
-
-antlr_2
-  : dot
-  | tilde
-  | typeargs
-  | call
-  ;
-
-antlr_3
-  : dot
-  | tilde
-  | typeargs
-  | call
-  ;
-
-antlr_4
-  : uniontype
-  | isecttype
-  ;
-
-// Rules of the form antlr_* are only present to avoid a bug in the
-// interpreter
-
-/* Precedence
-
-Value:
-1. postfix
-2. unop
-3. binop
-4. =
-5. seq
-6. ,
-
-Type:
-1. ->
-2. & |
-3. ,
-*/
-
-// Lexer
-
-ID
-  : LETTER (LETTER | DIGIT | '_' | '\'')*
-  | '_' (LETTER | DIGIT | '_' | '\'')+
-  ;
-
-Byte
-  : DIGIT (DIGIT | '_')*
-  | '0' 'x' (HEX | '_')+
-  ;
-
-Boolean
-  : 'true'
-  | 'false'
-  ;
-  
-Number
-  : DIGIT (DIGIT | '_')* ('.' DIGIT (DIGIT | '_')*)?
-  ;
-
-STRING
-  : '"' STRING_CHAR* '"'
-  | '"""' (('"' | '""') ? ~'"')* '"""' '"'*
-  ;
-
-LPAREN_NEW
-  : NEWLINE '('
-  ;
-
-LSQUARE_NEW
-  : NEWLINE '['
-  ;
-
-MINUS_NEW
-  : NEWLINE '-'
-  ;
-
-LINECOMMENT
-  : '//' ~('\n')* {$channel = HIDDEN;}
-  ;
-
-NESTEDCOMMENT
-  : '/*' (NESTEDCOMMENT | '/' ~'*' | ~('*' | '/') | ('*'+ ~('*' | '/')))* '*'+ '/' {$channel = HIDDEN;}
-  ;
-
-WS
-  : (' ' | '\t' | '\r')+ {$channel = HIDDEN;}
-  ;
-
-NEWLINE
-  : '\n' (' ' | '\t' | '\r')* {$channel = HIDDEN;}
-  ;
-
-fragment
-STRING_CHAR
-  : ESC
-  | ~('"' | '\\')
-  ;
-
-fragment
-LETTER
-  : 'a'..'z' | 'A'..'Z'
-  ;
-
-fragment
-BINARY
-  : '0'..'1'
-  ;
-
-fragment
-DIGIT
-  : '0'..'9'
-  ;
-
-fragment
-HEX
-  : DIGIT | 'a'..'f'
-  ;
-
-fragment
-ESC
-  : '\\' ('a' | 'b' | 'e' | 'f' | 'n' | 'r' | 't' | 'v' | '\"' | '\\' | '0')
-  | HEX_ESC
-  | UNICODE_ESC
-  | UNICODE2_ESC
-  ;
-
-fragment
-HEX_ESC
-  : '\\' 'x' HEX HEX
-  ;
-
-fragment
-UNICODE_ESC
-  : '\\' 'u' HEX HEX HEX HEX
-  ;
-
-fragment
-UNICODE2_ESC
-  : '\\' 'U' HEX HEX HEX HEX HEX HEX
-  ;
-```
-
