@@ -9,7 +9,9 @@ import (
 	"github.com/alecthomas/participle/lexer"
 )
 
-var parser = participle.MustBuild(&Ast{})
+var parser = participle.MustBuild(&Ast{},
+	participle.Lexer(DefaultDefinition),
+)
 
 func ParseFile(filename string) (*Ast, error) {
 	data, err := ioutil.ReadFile(filename)
@@ -25,13 +27,13 @@ func ParseFile(filename string) (*Ast, error) {
 }
 
 type Ast struct {
-	Pos      lexer.Position
-	Packages []*Package `{ @@ }`
+	Pos     lexer.Position
+	Modules []*Module `{ @@ }`
 }
 
-type Package struct {
+type Module struct {
 	Pos     lexer.Position
-	Name    *string            `"package" @Ident`
+	Name    *string            `"module" @Ident @NewLine @NewLine`
 	Imports []*ImportStatement `{ @@ }`
 	Structs []*Struct          `{ @@ }`
 	Funs    []*FunDecl         `{ @@ }`
@@ -50,15 +52,15 @@ type Type struct {
 	Name string `":" @Ident`
 }
 
+type ReturnType struct {
+	Pos  lexer.Position
+	Name string `"-"">" @Ident`
+}
+
 type KeyValue struct {
 	Pos   lexer.Position
 	Key   string   `@Ident`
 	Value *Literal `"=" @@`
-}
-
-type ReturnType struct {
-	Pos  lexer.Position
-	Name string `"-"">" @Ident`
 }
 
 type ClassField struct {
@@ -114,12 +116,11 @@ type DecoratorDecl struct {
 }
 
 type FunDecl struct {
-	Pos        lexer.Position
-	Name       string             `"func" @Ident`
-	Parameters []*MethodParameter `"(" [ @@ { "," @@ } ] ")"`
-	ReturnType *ReturnType        `{ @@ }`
-	Body       []*Statement       `{ @@ }`
-	End        lexer.Position     `"end"`
+	Pos         lexer.Position
+	Name        string             `@Ident "="`
+	Parameters  []*MethodParameter `[ @@ { "," @@ } ]`
+	ReturnTypes []string           `"-"">" [ @Ident { "," @Ident } ]`
+	Body        []*Block           `{ @@ }`
 }
 
 type Fun struct {
@@ -129,8 +130,8 @@ type Fun struct {
 }
 
 type Block struct {
-	Pos        lexer.Position
-	Statements []*Statement `{ @@ }`
+	Statements []*Expression `{ @@ }`
+	End        *string       `@NewLine`
 }
 
 type Statement struct {
@@ -140,7 +141,7 @@ type Statement struct {
 	If              *IfStatement         `| @@`
 	For             *ForStatement        `| @@`
 	AssertStatement *AssertStatement     `| @@`
-	ReturnStatement *ReturnStatement     `| @@`
+	ReturnStatement *Expression          `| @@`
 	XmlDecl         *XmlDecl             `| @@`
 }
 
@@ -197,10 +198,15 @@ type ForIteratorStatement struct {
 	End lexer.Position `"end"`
 }
 
+type Expression struct {
+	Left     *Literal    `@@`
+	Operator *string     `{ @("+" | "-" | "*" | "/" | "=""=") }`
+	Right    *Expression `{ @@ }`
+}
+
 type ReturnStatement struct {
 	Pos        lexer.Position `"return"`
-	Expression *Expression    `@@`
-	XmlDecl    *XmlDecl       `| @@`
+	Expression *Expression    `{ @@ }`
 }
 
 type AssertStatement struct {
@@ -237,56 +243,18 @@ type Operator struct {
 	Value string `@( "<=" | ">=" | "=""=" | "<" | ">" | "!=" )`
 }
 
-type Expression struct {
-	Equality *Equality `@@`
-}
-
-type Equality struct {
-	Comparison *Comparison `@@`
-	Op         string      `[ @( "!" "=" | "=" "=" )`
-	Next       *Equality   `  @@ ]`
-}
-
-type Comparison struct {
-	Addition *Addition   `@@`
-	Op       string      `[ @( ">" | ">" "=" | "<" | "<" "=" )`
-	Next     *Comparison `  @@ ]`
-}
-
-type Addition struct {
-	Multiplication *Multiplication `@@`
-	Op             string          `[ @( "-" | "+" )`
-	Next           *Addition       `  @@ ]`
-}
-
-type Multiplication struct {
-	Unary *Unary          `@@`
-	Op    string          `[ @( "/" | "*" )`
-	Next  *Multiplication `  @@ ]`
-}
-
-type Unary struct {
-	Op      string   `  ( @( "!" | "-" )`
-	Unary   *Unary   `    @@ )`
-	Primary *Primary `| @@`
-}
-
-type Primary struct {
-	Literal       *Literal    `@@`
-	SubExpression *Expression `| "(" @@ ")" `
-}
-
 // Literal is a "union" type, where only one matching value will be present.
 type Literal struct {
 	Pos       lexer.Position
-	Nil       bool       `@"nil"`
-	Str       *string    `| @String`
-	Float     *float64   `| @Float`
-	Int       *int64     `| @Int`
-	Bool      *string    `| @( "true" | "false" )`
-	Reference *string    `| @Ident { @"." @Ident }`
-	Minus     *Literal   `| "-" @@`
-	List      []*Literal `| "[" { @@ [ "," ] } "]"`
+	Nil       bool        `@"nil"`
+	Str       *string     `| @String`
+	Float     *float64    `| @Float`
+	Int       *int64      `| @Int`
+	Bool      *string     `| @( "true" | "false" )`
+	Reference *string     `| @Ident { @"." @Ident }`
+	Minus     *Literal    `| "-" @@`
+	List      []*Literal  `| "[" { @@ [ "," ] } "]"`
+	Sub       *Expression `| "(" @@ ")"`
 	// Map       []*MapItem `| "{" { @@ [ "," ] } "}"`
 }
 

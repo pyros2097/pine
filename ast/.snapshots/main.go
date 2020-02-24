@@ -1,119 +1,96 @@
 &ast.Ast{
   Pos: Position{Filename: "", Offset: 0, Line: 1, Column: 1},
-  Packages: []*ast.Package{
-    &ast.Package{
+  Modules: []*ast.Module{
+    &ast.Module{
       Pos: Position{Filename: "", Offset: 0, Line: 1, Column: 1},
-      Name: &"main",
+      Name: &"main\n\n",
       Funs: []*ast.FunDecl{
         &ast.FunDecl{
-          Pos: Position{Filename: "", Offset: 14, Line: 3, Column: 1},
-          Name: "sub",
+          Pos: Position{Filename: "", Offset: 13, Line: 3, Column: 1},
+          Name: "add",
           Parameters: []*ast.MethodParameter{
             &ast.MethodParameter{
-              Pos: Position{Filename: "", Offset: 23, Line: 3, Column: 10},
+              Pos: Position{Filename: "", Offset: 19, Line: 3, Column: 7},
               ID: "a",
               Type: &ast.Type{
-                Pos: Position{Filename: "", Offset: 24, Line: 3, Column: 11},
-                Name: "float",
+                Pos: Position{Filename: "", Offset: 20, Line: 3, Column: 8},
+                Name: "int",
               },
             },
             &ast.MethodParameter{
-              Pos: Position{Filename: "", Offset: 33, Line: 3, Column: 20},
+              Pos: Position{Filename: "", Offset: 27, Line: 3, Column: 15},
               ID: "b",
               Type: &ast.Type{
-                Pos: Position{Filename: "", Offset: 34, Line: 3, Column: 21},
-                Name: "float",
+                Pos: Position{Filename: "", Offset: 28, Line: 3, Column: 16},
+                Name: "int",
               },
             },
           },
-          ReturnType: &ast.ReturnType{
-            Pos: Position{Filename: "", Offset: 43, Line: 3, Column: 30},
-            Name: "float",
+          ReturnTypes: []string{
+            "int",
           },
-          Body: []*ast.Statement{
-            &ast.Statement{
-              Pos: Position{Filename: "", Offset: 54, Line: 4, Column: 3},
-              ReturnStatement: &ast.ReturnStatement{
-                Pos: Position{Filename: "", Offset: 54, Line: 4, Column: 3},
-                Expression: &ast.Expression{
-                  Equality: &ast.Equality{
-                    Comparison: &ast.Comparison{
-                      Addition: &ast.Addition{
-                        Multiplication: &ast.Multiplication{
-                          Unary: &ast.Unary{
-                            Primary: &ast.Primary{
-                              Literal: a,
-                            },
-                          },
-                        },
-                      },
-                    },
+          Body: []*ast.Block{
+            &ast.Block{
+              End: &"\n",
+            },
+            &ast.Block{
+              Statements: []*ast.Expression{
+                &ast.Expression{
+                  Left: a,
+                  Operator: &"+",
+                  Right: &ast.Expression{
+                    Left: b,
                   },
                 },
               },
+              End: &"\n",
+            },
+            &ast.Block{
+              End: &"\n",
             },
           },
-          End: Position{Filename: "", Offset: 0, Line: 0, Column: 0},
         },
         &ast.FunDecl{
-          Pos: Position{Filename: "", Offset: 69, Line: 7, Column: 1},
+          Pos: Position{Filename: "", Offset: 50, Line: 6, Column: 1},
           Name: "main",
           Parameters: []*ast.MethodParameter{
             &ast.MethodParameter{
-              Pos: Position{Filename: "", Offset: 79, Line: 7, Column: 11},
+              Pos: Position{Filename: "", Offset: 57, Line: 6, Column: 8},
               ID: "a",
               Type: &ast.Type{
-                Pos: Position{Filename: "", Offset: 80, Line: 7, Column: 12},
+                Pos: Position{Filename: "", Offset: 58, Line: 6, Column: 9},
                 Name: "int",
               },
             },
             &ast.MethodParameter{
-              Pos: Position{Filename: "", Offset: 87, Line: 7, Column: 19},
+              Pos: Position{Filename: "", Offset: 65, Line: 6, Column: 16},
               ID: "b",
               Type: &ast.Type{
-                Pos: Position{Filename: "", Offset: 88, Line: 7, Column: 20},
+                Pos: Position{Filename: "", Offset: 66, Line: 6, Column: 17},
                 Name: "int",
               },
             },
           },
-          ReturnType: &ast.ReturnType{
-            Pos: Position{Filename: "", Offset: 95, Line: 7, Column: 27},
-            Name: "int",
+          ReturnTypes: []string{
+            "int",
           },
-          Body: []*ast.Statement{
-            &ast.Statement{
-              Pos: Position{Filename: "", Offset: 104, Line: 8, Column: 3},
-              ReturnStatement: &ast.ReturnStatement{
-                Pos: Position{Filename: "", Offset: 104, Line: 8, Column: 3},
-                Expression: &ast.Expression{
-                  Equality: &ast.Equality{
-                    Comparison: &ast.Comparison{
-                      Addition: &ast.Addition{
-                        Multiplication: &ast.Multiplication{
-                          Unary: &ast.Unary{
-                            Primary: &ast.Primary{
-                              Literal: a,
-                            },
-                          },
-                        },
-                        Op: "+",
-                        Next: &ast.Addition{
-                          Multiplication: &ast.Multiplication{
-                            Unary: &ast.Unary{
-                              Primary: &ast.Primary{
-                                Literal: b,
-                              },
-                            },
-                          },
-                        },
-                      },
-                    },
+          Body: []*ast.Block{
+            &ast.Block{
+              End: &"\n",
+            },
+            &ast.Block{
+              Statements: []*ast.Expression{
+                &ast.Expression{
+                  Left: a,
+                  Operator: &"+",
+                  Right: &ast.Expression{
+                    Left: b,
                   },
                 },
               },
+              End: &"\n",
             },
           },
-          End: Position{Filename: "", Offset: 0, Line: 0, Column: 0},
         },
       },
     },

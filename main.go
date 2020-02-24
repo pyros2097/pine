@@ -1,10 +1,7 @@
 package main
 
 import (
-	"os"
-
 	"yum/ast"
-	"yum/code_gen"
 
 	"github.com/alecthomas/repr"
 )
@@ -20,12 +17,6 @@ func main() {
 		panic(err)
 	}
 	println(repr.String(nodes, repr.Indent("  ")))
-	file, err := os.Create("main.wasm")
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
-	code_gen.GenerateCode(file, nodes)
 }
 
 // wasmer run ww.wat

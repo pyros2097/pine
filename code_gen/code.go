@@ -30,14 +30,14 @@ func GenerateCode(w io.Writer, ast *ast.Ast) {
 	funcs := []byte{}
 	exports := []byte{}
 	funcBodys := []byte{}
-	for _, p := range ast.Packages {
+	for _, p := range ast.Modules {
 		for i, fun := range p.Funs {
 			types = append(types, 0x60, byte(len(fun.Parameters))) // func, num params
 			for _, v := range fun.Parameters {                     // i32, i32
 				types = append(types, typeMap[v.Type.Name])
 			}
-			types = append(types, 0x01)                         // num results
-			types = append(types, typeMap[fun.ReturnType.Name]) // i32
+			types = append(types, 0x01)                        // num results
+			types = append(types, typeMap[fun.ReturnTypes[0]]) // i32
 
 			funcs = append(funcs, byte(i))                 // function 0 signature index
 			exports = append(exports, byte(len(fun.Name))) // name length
@@ -48,7 +48,7 @@ func GenerateCode(w io.Writer, ast *ast.Ast) {
 				0x00,       // local decl count
 				0x20, 0x00, //  local.get, local index
 				0x20, 0x01, //  local.get, local index
-				operandMap[fun.ReturnType.Name]["add"], 0x0b, //  i32.add, end
+				operandMap[fun.ReturnTypes[0]]["add"], 0x0b, //  i32.add, end
 			}
 			funcBodys = append(funcBodys, byte(len(funcbody))) // func body size
 			funcBodys = append(funcBodys, funcbody...)
