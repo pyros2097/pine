@@ -1,7 +1,4 @@
 module main
 
-add = a: int, b: int -> int
-  a + b
-
 main = a: int, b: int -> int
-  a + b
+  2 + 6 - 2 * 10 / 7
