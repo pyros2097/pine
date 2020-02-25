@@ -117,8 +117,9 @@ type FunDecl struct {
 	Pos         lexer.Position
 	Name        string             `@Ident "="`
 	Parameters  []*MethodParameter `[ @@ { "," @@ } ]`
-	ReturnTypes []string           `"-"">" [ @Ident { "," @Ident } ]`
-	Body        *Block             `{ @@ }`
+	ReturnTypes []string           `"-"">" [ @Ident { "," @Ident } ] @NewLine`
+	Body        []*Block           `{ @@ }`
+	End         *string            `@NewLine`
 }
 
 type Fun struct {
@@ -128,8 +129,8 @@ type Fun struct {
 }
 
 type Block struct {
-	Statements []*Expression `{ @@ }`
-	End        *string       `@NewLine`
+	Exp *Expression `@@`
+	End *string     `@NewLine`
 }
 
 type Statement struct {

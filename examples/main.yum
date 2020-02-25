@@ -1,4 +1,8 @@
 module main
 
+add = a: int, b: int -> int
+  1 + 2
+
 main = a: int, b: int -> int
-  2 + 6 - 2 * 10 / 7
+  1 + 2
+

@@ -95,10 +95,10 @@ func GenerateCode(w io.Writer, ast *ast.Ast) {
 				0x00, // local decl count
 			})
 
-			for _, s := range fun.Body.Statements {
-				if op := s.Operator; op != nil {
+			for _, s := range fun.Body {
+				if op := s.Exp.Operator; op != nil {
 					if *op == "+" {
-						operate(funcbody, *op, s.Left, s.Right)
+						operate(funcbody, *op, s.Exp.Left, s.Exp.Right)
 					}
 				}
 			}
