@@ -1,8 +1,11 @@
 module main
 
 add = a: num, b: num -> num
-  a + b
+  a + b + 4
+
+another = a: num, b: num -> num
+  add(a, b)
 
 main = a: num, b: num -> num
-  add(a, b)
+  another(a, b)
 
