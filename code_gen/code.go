@@ -70,7 +70,7 @@ func float64ToByte(f float64) []byte {
 	return buf.Bytes()
 }
 
-func operate(buffer *bytes.Buffer, operation string, l *ast.Literal, r *ast.Expression) {
+func operate(buffer *bytes.Buffer, name string, symbolTable map[string]FuncParam, operation string, l *ast.Literal, r *ast.Expression) {
 	if l != nil && l.Num != nil {
 		buffer.WriteByte(operandMap["f64.const"])
 		buffer.Write(float64ToByte(*l.Num))
@@ -80,24 +80,26 @@ func operate(buffer *bytes.Buffer, operation string, l *ast.Literal, r *ast.Expr
 		buffer.Write(float64ToByte(*r.Left.Num))
 		buffer.WriteByte(operandMap[operation])
 	}
-	if r.Operator != nil {
-		operate(buffer, *r.Operator, nil, r.Right)
+	if l != nil && l.Reference != nil {
+		ref, ok := symbolTable[*l.Reference]
+		if !ok {
+			panic("Func " + name + " parameter " + *l.Reference + " doesn't exist")
+		}
+		buffer.WriteByte(operandMap["get_local"])
+		buffer.WriteByte(byte(ref.Index))
 	}
-	// if s.Left.Reference != nil {
-	// 	ref, ok := funcParameterMap[*s.Left.Reference]
-	// 	if !ok {
-	// 		panic("Func " + fun.Name + " parameter " + *s.Left.Reference + " doesn't exist")
-	// 	}
-	// 	funcbody = append(funcbody, LOCAL_GET, byte(ref.Index))
-	// }
-	// if s.Right.Left.Reference != nil {
-	// 	ref, ok := funcParameterMap[*s.Right.Left.Reference]
-	// 	if !ok {
-	// 		panic("Func " + fun.Name + " parameter " + *s.Right.Left.Reference + " doesn't exist")
-	// 	}
-	// 	funcbody = append(funcbody, LOCAL_GET, byte(ref.Index))
-	// 	funcbody = append(funcbody, operandMap[ref.Type]["add"])
-	// }
+	if r.Left != nil && r.Left.Reference != nil {
+		ref, ok := symbolTable[*r.Left.Reference]
+		if !ok {
+			panic("Func " + name + " parameter " + *r.Left.Reference + " doesn't exist")
+		}
+		buffer.WriteByte(operandMap["get_local"])
+		buffer.WriteByte(byte(ref.Index))
+		buffer.WriteByte(operandMap[operation])
+	}
+	if r.Operator != nil {
+		operate(buffer, name, symbolTable, *r.Operator, nil, r.Right)
+	}
 }
 
 func GenerateCode(w io.Writer, ast *ast.Ast) {
@@ -110,7 +112,7 @@ func GenerateCode(w io.Writer, ast *ast.Ast) {
 	funcBodys := []byte{}
 	for _, p := range ast.Modules {
 		for i, fun := range p.Funs {
-			funcParameterMap := map[string]FuncParam{}
+			symbolTable := map[string]FuncParam{}
 			types = append(types, 0x60, byte(len(fun.Parameters))) // func, num params
 			for i, v := range fun.Parameters {                     // i32, i32
 				t, ok := typeMap[v.Type.Name]
@@ -118,7 +120,7 @@ func GenerateCode(w io.Writer, ast *ast.Ast) {
 					panic("Func '" + fun.Name + "' parameter '" + v.ID + "' type '" + v.Type.Name + "' doesn't exist")
 				}
 				types = append(types, t)
-				funcParameterMap[v.ID] = FuncParam{
+				symbolTable[v.ID] = FuncParam{
 					Index: i,
 					Ref:   v.ID,
 					Type:  v.Type.Name,
@@ -141,9 +143,7 @@ func GenerateCode(w io.Writer, ast *ast.Ast) {
 			})
 			for _, s := range fun.Body {
 				if op := s.Exp.Operator; op != nil {
-					if *op == "+" {
-						operate(funcbody, *op, s.Exp.Left, s.Exp.Right)
-					}
+					operate(funcbody, fun.Name, symbolTable, *op, s.Exp.Left, s.Exp.Right)
 				}
 			}
 			funcBodys = append(funcBodys, byte(len(funcbody.Bytes())+1)) // func body size

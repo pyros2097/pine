@@ -80,13 +80,13 @@
               Exp: &ast.Expression{
                 Left: &ast.Literal{
                   Pos: Position{Filename: "", Offset: 81, Line: 7, Column: 3},
-                  Num: &1,
+                  Reference: &"a",
                 },
                 Operator: &"+",
                 Right: &ast.Expression{
                   Left: &ast.Literal{
                     Pos: Position{Filename: "", Offset: 85, Line: 7, Column: 7},
-                    Num: &5,
+                    Reference: &"b",
                   },
                 },
               },

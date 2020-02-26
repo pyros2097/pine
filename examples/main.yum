@@ -4,5 +4,5 @@ add = a: num, b: num -> num
   1 + 2
 
 main = a: num, b: num -> num
-  1 + 5
+  a + b
 
