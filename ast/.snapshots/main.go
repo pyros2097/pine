@@ -14,7 +14,7 @@
               ID: "a",
               Type: &ast.Type{
                 Pos: Position{Filename: "", Offset: 20, Line: 3, Column: 8},
-                Name: "int",
+                Name: "num",
               },
             },
             &ast.MethodParameter{
@@ -22,12 +22,12 @@
               ID: "b",
               Type: &ast.Type{
                 Pos: Position{Filename: "", Offset: 28, Line: 3, Column: 16},
-                Name: "int",
+                Name: "num",
               },
             },
           },
           ReturnTypes: []string{
-            "int",
+            "num",
             "\n",
           },
           Body: []*ast.Block{
@@ -35,13 +35,13 @@
               Exp: &ast.Expression{
                 Left: &ast.Literal{
                   Pos: Position{Filename: "", Offset: 43, Line: 4, Column: 3},
-                  Int: &1,
+                  Num: &1,
                 },
                 Operator: &"+",
                 Right: &ast.Expression{
                   Left: &ast.Literal{
                     Pos: Position{Filename: "", Offset: 47, Line: 4, Column: 7},
-                    Int: &2,
+                    Num: &2,
                   },
                 },
               },
@@ -59,7 +59,7 @@
               ID: "a",
               Type: &ast.Type{
                 Pos: Position{Filename: "", Offset: 58, Line: 6, Column: 9},
-                Name: "int",
+                Name: "num",
               },
             },
             &ast.MethodParameter{
@@ -67,12 +67,12 @@
               ID: "b",
               Type: &ast.Type{
                 Pos: Position{Filename: "", Offset: 66, Line: 6, Column: 17},
-                Name: "int",
+                Name: "num",
               },
             },
           },
           ReturnTypes: []string{
-            "int",
+            "num",
             "\n",
           },
           Body: []*ast.Block{
@@ -80,13 +80,13 @@
               Exp: &ast.Expression{
                 Left: &ast.Literal{
                   Pos: Position{Filename: "", Offset: 81, Line: 7, Column: 3},
-                  Int: &1,
+                  Num: &1,
                 },
                 Operator: &"+",
                 Right: &ast.Expression{
                   Left: &ast.Literal{
                     Pos: Position{Filename: "", Offset: 85, Line: 7, Column: 7},
-                    Int: &2,
+                    Num: &5,
                   },
                 },
               },

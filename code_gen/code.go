@@ -2,25 +2,53 @@ package code_gen
 
 import (
 	"bytes"
+	"encoding/binary"
 	"io"
 	"yum/ast"
 )
 
 var typeMap = map[string]byte{
-	"int":   0x7f,
-	"float": 0x7c,
+	"num": 0x7c,
 }
 
-var operandMap = map[string]map[string]byte{
-	"int": map[string]byte{
-		"+": 0x6a,
-		"-": 0x6b,
-		"*": 0x6c,
-		"/": 0x6d,
-	},
-	"float": map[string]byte{
-		"add": 0xa0,
-	},
+var operandMap = map[string]byte{
+	"+":             0xa0,
+	"-":             0xa1,
+	"*":             0xa2,
+	"/":             0xa3,
+	"min":           0xa4,
+	"max":           0xa5,
+	"sqrt":          0x9f,
+	"ceil":          0x9b,
+	"floor":         0x9c,
+	"trunc":         0x9d,
+	"nearest":       0x9e,
+	"abs":           0x99,
+	"neg":           0x9a,
+	"copysign":      0xa6,
+	"eq":            0x61,
+	"ne":            0x62,
+	"lt":            0x63,
+	"gt":            0x64,
+	"le":            0x65,
+	"ge":            0x66,
+	"f64.load":      0x2b,
+	"f64.store":     0x39,
+	"memory.grow":   0x40,
+	"nop":           0x01,
+	"drop":          0x1a,
+	"i32.const":     0x41,
+	"i64.const":     0x42,
+	"f32.const":     0x43,
+	"f64.const":     0x44,
+	"get_local":     0x20,
+	"set_local":     0x21,
+	"tee_local":     0x22,
+	"get_global":    0x23,
+	"set_global":    0x24,
+	"select":        0x1b,
+	"call":          0x10,
+	"call_indirect": 0x11,
 }
 
 const FUNC_END = 0x0b
@@ -33,15 +61,24 @@ type FuncParam struct {
 	Type  string
 }
 
-func operate(buffer *bytes.Buffer, operation string, l *ast.Literal, r *ast.Expression) {
-	if l != nil && l.Int != nil {
-		buffer.WriteByte(DECLARE_CONST)
-		buffer.WriteByte(byte(*l.Int))
+func float64ToByte(f float64) []byte {
+	var buf bytes.Buffer
+	err := binary.Write(&buf, binary.LittleEndian, f)
+	if err != nil {
+		panic("binary.Write failed: " + err.Error())
 	}
-	if r.Left.Int != nil {
-		buffer.WriteByte(DECLARE_CONST)
-		buffer.WriteByte(byte(*r.Left.Int))
-		buffer.WriteByte(operandMap["int"][operation])
+	return buf.Bytes()
+}
+
+func operate(buffer *bytes.Buffer, operation string, l *ast.Literal, r *ast.Expression) {
+	if l != nil && l.Num != nil {
+		buffer.WriteByte(operandMap["f64.const"])
+		buffer.Write(float64ToByte(*l.Num))
+	}
+	if r.Left.Num != nil {
+		buffer.WriteByte(operandMap["f64.const"])
+		buffer.Write(float64ToByte(*r.Left.Num))
+		buffer.WriteByte(operandMap[operation])
 	}
 	if r.Operator != nil {
 		operate(buffer, *r.Operator, nil, r.Right)
@@ -76,15 +113,23 @@ func GenerateCode(w io.Writer, ast *ast.Ast) {
 			funcParameterMap := map[string]FuncParam{}
 			types = append(types, 0x60, byte(len(fun.Parameters))) // func, num params
 			for i, v := range fun.Parameters {                     // i32, i32
-				types = append(types, typeMap[v.Type.Name])
+				t, ok := typeMap[v.Type.Name]
+				if !ok {
+					panic("Func '" + fun.Name + "' parameter '" + v.ID + "' type '" + v.Type.Name + "' doesn't exist")
+				}
+				types = append(types, t)
 				funcParameterMap[v.ID] = FuncParam{
 					Index: i,
 					Ref:   v.ID,
 					Type:  v.Type.Name,
 				}
 			}
-			types = append(types, 0x01)                        // num results
-			types = append(types, typeMap[fun.ReturnTypes[0]]) // i32
+			t, ok := typeMap[fun.ReturnTypes[0]]
+			if !ok {
+				panic("Func '" + fun.Name + "' return type '" + fun.ReturnTypes[0] + "' doesn't exist")
+			}
+			types = append(types, 0x01) // num results
+			types = append(types, t)    // i32
 
 			funcs = append(funcs, byte(i))                 // function 0 signature index
 			exports = append(exports, byte(len(fun.Name))) // name length
@@ -94,7 +139,6 @@ func GenerateCode(w io.Writer, ast *ast.Ast) {
 			funcbody := bytes.NewBuffer([]byte{
 				0x00, // local decl count
 			})
-
 			for _, s := range fun.Body {
 				if op := s.Exp.Operator; op != nil {
 					if *op == "+" {
@@ -102,9 +146,9 @@ func GenerateCode(w io.Writer, ast *ast.Ast) {
 					}
 				}
 			}
-			funcbody.WriteByte(FUNC_END)
-			funcBodys = append(funcBodys, byte(len(funcbody.Bytes()))) // func body size
+			funcBodys = append(funcBodys, byte(len(funcbody.Bytes())+1)) // func body size
 			funcBodys = append(funcBodys, funcbody.Bytes()...)
+			funcBodys = append(funcBodys, FUNC_END)
 			// panic(fmt.Sprintf("%+v", funcbody.Bytes()))
 		}
 		w.Write([]byte{0x01, byte(len(types) + 1), byte(len(p.Funs))}) // Type section code, section size, num types, type data

@@ -18,9 +18,3 @@ func main() {
 	}
 	println(repr.String(nodes, repr.Indent("  ")))
 }
-
-// wasmer run ww.wat
-// wat2wasm -d -v ww.wat
-// wasmtime run main.wasm
-// wasmtime run main.wasm
-// vim -b ww.wasm

@@ -247,11 +247,9 @@ type Literal struct {
 	Pos       lexer.Position
 	Nil       bool        `@"nil"`
 	Str       *string     `| @String`
-	Float     *float64    `| @Float`
-	Int       *int64      `| @Int`
+	Num       *float64    `| @(Float | Int)`
 	Bool      *string     `| @( "true" | "false" )`
 	Reference *string     `| @Ident { @"." @Ident }`
-	Minus     *Literal    `| "-" @@`
 	List      []*Literal  `| "[" { @@ [ "," ] } "]"`
 	Sub       *Expression `| "(" @@ ")"`
 	// Map       []*MapItem `| "{" { @@ [ "," ] } "}"`
