@@ -95,9 +95,9 @@ type Typedef struct {
 	Name string `@Ident`
 }
 
-type MethodParameter struct {
+type FuncParameter struct {
 	Pos  lexer.Position
-	ID   string `@Ident`
+	Name string `@Ident`
 	Type *Type  `@@`
 }
 
@@ -115,11 +115,11 @@ type DecoratorDecl struct {
 
 type FunDecl struct {
 	Pos         lexer.Position
-	Name        string             `@Ident "="`
-	Parameters  []*MethodParameter `[ @@ { "," @@ } ]`
-	ReturnTypes []string           `"-"">" [ @Ident { "," @Ident } ] @NewLine`
-	Body        []*Block           `{ @@ }`
-	End         *string            `@NewLine`
+	Name        string           `@Ident "="`
+	Parameters  []*FuncParameter `[ @@ { "," @@ } ]`
+	ReturnTypes []string         `"-"">" [ @Ident { "," @Ident } ] @NewLine`
+	Body        []*Block         `{ @@ }`
+	End         *string          `@NewLine`
 }
 
 type Fun struct {
@@ -199,7 +199,7 @@ type ForIteratorStatement struct {
 
 type Expression struct {
 	Left     *Literal    `@@`
-	Operator *string     `{ @("+" | "-" | "*" | "/" | "=""=") }`
+	Operator *string     `{ @("+" | "-" | "*" | "/" | "<=" | ">=" | "=""=" | "<" | ">" | "!=") }`
 	Right    *Expression `{ @@ }`
 }
 
@@ -237,11 +237,6 @@ type AssignmentLiteral struct {
 	Map     *MapStatement      `| @@`
 }
 
-type Operator struct {
-	Pos   lexer.Position
-	Value string `@( "<=" | ">=" | "=""=" | "<" | ">" | "!=" )`
-}
-
 // Literal is a "union" type, where only one matching value will be present.
 type Literal struct {
 	Pos       lexer.Position
@@ -251,6 +246,7 @@ type Literal struct {
 	Bool      *string     `| @( "true" | "false" )`
 	Reference *string     `| @Ident { @"." @Ident }`
 	List      []*Literal  `| "[" { @@ [ "," ] } "]"`
+	Params    []*Literal  `| "(" [ @@ { "," @@ } ] ")"`
 	Sub       *Expression `| "(" @@ ")"`
 	// Map       []*MapItem `| "{" { @@ [ "," ] } "}"`
 }

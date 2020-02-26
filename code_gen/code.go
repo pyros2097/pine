@@ -55,9 +55,15 @@ const FUNC_END = 0x0b
 const LOCAL_GET = 0x20     // local.get
 const DECLARE_CONST = 0x41 // delcare const
 
+type FuncData struct {
+	Index  int
+	Name   string
+	Params map[string]FuncParam
+}
+
 type FuncParam struct {
 	Index int
-	Ref   string
+	Name  string
 	Type  string
 }
 
@@ -70,7 +76,7 @@ func float64ToByte(f float64) []byte {
 	return buf.Bytes()
 }
 
-func operate(buffer *bytes.Buffer, name string, symbolTable map[string]FuncParam, operation string, l *ast.Literal, r *ast.Expression) {
+func operate(buffer *bytes.Buffer, funcName string, funcSymbolTable map[string]FuncData, operation *string, l *ast.Literal, r *ast.Expression) {
 	if l != nil && l.Num != nil {
 		buffer.WriteByte(operandMap["f64.const"])
 		buffer.Write(float64ToByte(*l.Num))
@@ -78,27 +84,57 @@ func operate(buffer *bytes.Buffer, name string, symbolTable map[string]FuncParam
 	if r.Left.Num != nil {
 		buffer.WriteByte(operandMap["f64.const"])
 		buffer.Write(float64ToByte(*r.Left.Num))
-		buffer.WriteByte(operandMap[operation])
+		buffer.WriteByte(operandMap[*operation])
 	}
 	if l != nil && l.Reference != nil {
-		ref, ok := symbolTable[*l.Reference]
-		if !ok {
-			panic("Func " + name + " parameter " + *l.Reference + " doesn't exist")
+		if operation != nil {
+			ref, ok := funcSymbolTable[funcName].Params[*l.Reference]
+			if !ok {
+				panic("Func " + funcName + " parameter " + *l.Reference + " does not exist")
+			}
+			buffer.WriteByte(operandMap["get_local"])
+			buffer.WriteByte(byte(ref.Index))
+		} else {
+			// FUNC CALL
+			callFunc, ok := funcSymbolTable[*l.Reference]
+			if !ok {
+				panic("Func " + funcName + " trying to call non-existing function " + *l.Reference)
+			}
+			if len(callFunc.Params) != len(r.Left.Params) {
+				panic("Func '" + funcName + "' trying to call function '" + callFunc.Name + "' with extra parameters")
+			}
+			for _, v := range r.Left.Params {
+				if v.Num != nil {
+					buffer.WriteByte(operandMap["f64.const"])
+					buffer.Write(float64ToByte(*v.Num))
+				}
+				if v.Reference != nil {
+					vref, ok := funcSymbolTable[funcName].Params[*v.Reference]
+					if !ok {
+						panic("Func '" + funcName + "' trying to call '" + callFunc.Name + "' with non-existing variable " + *v.Reference)
+					}
+					buffer.WriteByte(operandMap["get_local"])
+					buffer.WriteByte(byte(vref.Index))
+				}
+			}
+			buffer.WriteByte(operandMap["call"])
+			buffer.WriteByte(byte(callFunc.Index))
+			if r.Operator != nil {
+				operate(buffer, funcName, funcSymbolTable, r.Operator, nil, r.Right)
+			}
 		}
-		buffer.WriteByte(operandMap["get_local"])
-		buffer.WriteByte(byte(ref.Index))
 	}
 	if r.Left != nil && r.Left.Reference != nil {
-		ref, ok := symbolTable[*r.Left.Reference]
+		ref, ok := funcSymbolTable[funcName].Params[*r.Left.Reference]
 		if !ok {
-			panic("Func " + name + " parameter " + *r.Left.Reference + " doesn't exist")
+			panic("Func '" + funcName + "' parameter '" + *r.Left.Reference + "' does not exist")
 		}
 		buffer.WriteByte(operandMap["get_local"])
 		buffer.WriteByte(byte(ref.Index))
-		buffer.WriteByte(operandMap[operation])
+		buffer.WriteByte(operandMap[*operation])
 	}
 	if r.Operator != nil {
-		operate(buffer, name, symbolTable, *r.Operator, nil, r.Right)
+		operate(buffer, funcName, funcSymbolTable, r.Operator, nil, r.Right)
 	}
 }
 
@@ -110,25 +146,30 @@ func GenerateCode(w io.Writer, ast *ast.Ast) {
 	funcs := []byte{}
 	exports := []byte{}
 	funcBodys := []byte{}
+	funcSymbolTable := map[string]FuncData{}
 	for _, p := range ast.Modules {
 		for i, fun := range p.Funs {
-			symbolTable := map[string]FuncParam{}
+			funcSymbolTable[fun.Name] = FuncData{
+				Index:  i,
+				Name:   fun.Name,
+				Params: map[string]FuncParam{},
+			}
 			types = append(types, 0x60, byte(len(fun.Parameters))) // func, num params
-			for i, v := range fun.Parameters {                     // i32, i32
-				t, ok := typeMap[v.Type.Name]
+			for pi, param := range fun.Parameters {                // i32, i32
+				t, ok := typeMap[param.Type.Name]
 				if !ok {
-					panic("Func '" + fun.Name + "' parameter '" + v.ID + "' type '" + v.Type.Name + "' doesn't exist")
+					panic("Func '" + fun.Name + "' parameter '" + param.Name + "' type '" + param.Type.Name + "' does not exist")
 				}
 				types = append(types, t)
-				symbolTable[v.ID] = FuncParam{
-					Index: i,
-					Ref:   v.ID,
-					Type:  v.Type.Name,
+				funcSymbolTable[fun.Name].Params[param.Name] = FuncParam{
+					Index: pi,
+					Name:  param.Name,
+					Type:  param.Type.Name,
 				}
 			}
 			t, ok := typeMap[fun.ReturnTypes[0]]
 			if !ok {
-				panic("Func '" + fun.Name + "' return type '" + fun.ReturnTypes[0] + "' doesn't exist")
+				panic("Func '" + fun.Name + "' return type '" + fun.ReturnTypes[0] + "' does not exist")
 			}
 			types = append(types, 0x01) // num results
 			types = append(types, t)    // i32
@@ -142,14 +183,14 @@ func GenerateCode(w io.Writer, ast *ast.Ast) {
 				0x00, // local decl count
 			})
 			for _, s := range fun.Body {
-				if op := s.Exp.Operator; op != nil {
-					operate(funcbody, fun.Name, symbolTable, *op, s.Exp.Left, s.Exp.Right)
-				}
+				operate(funcbody, fun.Name, funcSymbolTable, s.Exp.Operator, s.Exp.Left, s.Exp.Right)
 			}
 			funcBodys = append(funcBodys, byte(len(funcbody.Bytes())+1)) // func body size
 			funcBodys = append(funcBodys, funcbody.Bytes()...)
 			funcBodys = append(funcBodys, FUNC_END)
-			// panic(fmt.Sprintf("%+v", funcbody.Bytes()))
+			// if i == 0 {
+			// 	panic(fmt.Sprintf("%+v", funcbody.Bytes()))
+			// }
 		}
 		w.Write([]byte{0x01, byte(len(types) + 1), byte(len(p.Funs))}) // Type section code, section size, num types, type data
 		w.Write(types)
