@@ -1,7 +1,8 @@
 package code_gen
 
 import (
-	"fmt"
+	"bytes"
+	"io"
 	"os"
 	"strings"
 	"testing"
@@ -30,24 +31,23 @@ func TestCode(t *testing.T) {
 				panic(err)
 			}
 			defer file.Close()
-			GenerateCode(file, ast)
-			bytes, err := wasm.ReadBytes(".snapshots/" + wasmFileName)
+			data, err := GenerateCode(ast)
 			if err != nil {
 				panic(err)
 			}
-			// Instantiates the WebAssembly module.
-			instance, err := wasm.NewInstance(bytes)
+			io.Copy(file, bytes.NewBuffer(data.Bytes()))
+			instance, err := wasm.NewInstance(data.Bytes())
 			if err != nil {
 				panic(err)
 			}
 			defer instance.Close()
 
 			mainFunc := instance.Exports["main"]
-			result, err := mainFunc(5.0, 1.0)
+			result, err := mainFunc()
 			if err != nil {
 				panic(err)
 			}
-			fmt.Println(result)
+			assert.Equal(t, "void", result.String())
 		})
 	}
 }

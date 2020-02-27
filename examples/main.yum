@@ -11,10 +11,9 @@ another = a: num, b: num -> num
 // useGlobal<T> = key: string, default: T -> T
 // hacky stuff
 // name, setName := useGlobal<string>("name", "123")
-main = a: num, b: num -> num
+main = ->
   1 + 2
   3 + 4
 //  some_stuff(a, b)
-  another(a, b)
-  another(a, b)
+  another(1, 5)
 

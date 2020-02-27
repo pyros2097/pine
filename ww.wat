@@ -4,23 +4,12 @@
 ;;   (export "memory" (memory 0))
 ;;   (data (i32.const 8) "hello world\n")
 
-  (func $add (export "add") (param f64 f64)
+  (func $main (export "main")
     (f64.add
-        (local.get 0)
-        (local.get 1)
+        (f64.const 1)
+        (f64.const 5)
     )
     drop
-  )
-
-  (func $main (export "main") (param f64 f64) (result f64)
-    (call $add
-        (f64.const 1)
-        (f64.const 5)
-    )
-    (f64.add
-        (f64.const 1)
-        (f64.const 5)
-    )
   )
 
   ;; (func $add (export "main") (param f64 f64) (result f64)
