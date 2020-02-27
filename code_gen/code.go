@@ -167,13 +167,18 @@ func GenerateCode(w io.Writer, ast *ast.Ast) {
 					Type:  param.Type.Name,
 				}
 			}
-			t, ok := typeMap[fun.ReturnTypes[0]]
-			if !ok {
-				panic("Func '" + fun.Name + "' return type '" + fun.ReturnTypes[0] + "' does not exist")
+			// TODO: we need to remove the last item since '\n' gets captured somehow needs to be fixed later
+			fun.ReturnTypes = fun.ReturnTypes[:len(fun.ReturnTypes)-1]
+			if len(fun.ReturnTypes) > 0 {
+				t, ok := typeMap[fun.ReturnTypes[0]]
+				if !ok {
+					panic("Func '" + fun.Name + "' return type '" + fun.ReturnTypes[0] + "' does not exist")
+				}
+				types = append(types, 0x01) // num results
+				types = append(types, t)    // i32
+			} else {
+				types = append(types, 0x00) // num results
 			}
-			types = append(types, 0x01) // num results
-			types = append(types, t)    // i32
-
 			funcs = append(funcs, byte(i))                 // function 0 signature index
 			exports = append(exports, byte(len(fun.Name))) // name length
 			exports = append(exports, []byte(fun.Name)...) // name
@@ -182,8 +187,12 @@ func GenerateCode(w io.Writer, ast *ast.Ast) {
 			funcbody := bytes.NewBuffer([]byte{
 				0x00, // local decl count
 			})
-			for _, s := range fun.Body {
+			for i, s := range fun.Body {
 				operate(funcbody, fun.Name, funcSymbolTable, s.Exp.Operator, s.Exp.Left, s.Exp.Right)
+				if i != len(fun.Body)-1 {
+					funcbody.WriteByte(operandMap["drop"])
+				}
+
 			}
 			funcBodys = append(funcBodys, byte(len(funcbody.Bytes())+1)) // func body size
 			funcBodys = append(funcBodys, funcbody.Bytes()...)

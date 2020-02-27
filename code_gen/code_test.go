@@ -1,6 +1,7 @@
 package code_gen
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/alecthomas/assert"
 	"github.com/stretchr/testify/require"
+	wasm "github.com/wasmerio/go-ext-wasm/wasmer"
 )
 
 var testCases = []string{
@@ -22,16 +24,30 @@ func TestCode(t *testing.T) {
 			ast, err := ast.ParseFile("../examples/" + fileName)
 			require.NoError(t, err)
 
-			file, err := os.Create("./.snapshots/" + strings.Replace(fileName, ".yum", ".wasm", 1))
+			wasmFileName := strings.Replace(fileName, ".yum", ".wasm", 1)
+			file, err := os.Create("./.snapshots/" + wasmFileName)
 			if err != nil {
 				panic(err)
 			}
 			defer file.Close()
 			GenerateCode(file, ast)
+			bytes, err := wasm.ReadBytes(".snapshots/" + wasmFileName)
+			if err != nil {
+				panic(err)
+			}
+			// Instantiates the WebAssembly module.
+			instance, err := wasm.NewInstance(bytes)
+			if err != nil {
+				panic(err)
+			}
+			defer instance.Close()
 
-			// buffer := bytes.NewBuffer(nil)
-			// GenerateCode(buffer, ast)
-			// snapshotter.SnapshotTName(t, strings.Replace(fileName, ".yum", ".wasm", 1), buffer.Bytes())
+			mainFunc := instance.Exports["main"]
+			result, err := mainFunc(5.0, 1.0)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println(result)
 		})
 	}
 }

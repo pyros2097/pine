@@ -505,23 +505,27 @@ func (s *Scanner) scanComment(ch rune) rune {
 		for ch != '\n' && ch >= 0 {
 			ch = s.next()
 		}
+		// eat the last \n so that the parser doesn't complain of '\n'
+		if ch == '\n' {
+			ch = s.next()
+		}
 		return ch
 	}
 
 	// general comment
-	ch = s.next() // read character after "/*"
-	for {
-		if ch < 0 {
-			s.error("comment not terminated")
-			break
-		}
-		ch0 := ch
-		ch = s.next()
-		if ch0 == '*' && ch == '/' {
-			ch = s.next()
-			break
-		}
-	}
+	// ch = s.next() // read character after "/*"
+	// for {
+	// 	if ch < 0 {
+	// 		s.error("comment not terminated")
+	// 		break
+	// 	}
+	// 	ch0 := ch
+	// 	ch = s.next()
+	// 	if ch0 == '*' && ch == '/' {
+	// 		ch = s.next()
+	// 		break
+	// 	}
+	// }
 	return ch
 }
 
@@ -608,7 +612,8 @@ redo:
 		case '/':
 			ch = s.next()
 			if (ch == '/' || ch == '*') && s.Mode&ScanComments != 0 {
-				if s.Mode&SkipComments != 0 {
+				// skip comments for now
+				if true {
 					s.tokPos = -1 // don't collect token text
 					ch = s.scanComment(ch)
 					goto redo

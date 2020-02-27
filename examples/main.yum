@@ -1,11 +1,20 @@
 module main
 
+// some_stuff = a: num, b: num ->
+//   a + b + 4
 add = a: num, b: num -> num
   a + b + 4
 
 another = a: num, b: num -> num
   add(a, b)
 
+// useGlobal<T> = key: string, default: T -> T
+// hacky stuff
+// name, setName := useGlobal<string>("name", "123")
 main = a: num, b: num -> num
+  1 + 2
+  3 + 4
+//  some_stuff(a, b)
+  another(a, b)
   another(a, b)
 
