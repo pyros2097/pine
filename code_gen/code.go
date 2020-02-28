@@ -167,6 +167,7 @@ func emitTypes(buffer *bytes.Buffer, fun FuncData) error {
 	} else {
 		buffer.WriteByte(0x00) // num results
 	}
+	// panic(repr.String(buffer.Bytes()))
 	return nil
 }
 
@@ -179,33 +180,33 @@ func GenerateCode(tree *ast.Ast) (*bytes.Buffer, error) {
 	funcs := []byte{}
 	exports := []byte{}
 	funcBodys := []byte{}
+	externFuncsTable := map[string]FuncData{}
 	funcSymbolTable := map[string]FuncData{}
 	for _, p := range tree.Modules {
-		// for _, a := range p.TypeAlias {
-		// 	fnIndex := len(funcSymbolTable)
-		// 	returnType := ""
-		// 	// TODO: we need to remove the last item since '\n' gets captured somehow needs to be fixed later
-		// 	if len(a.ReturnTypes) > 1 {
-		// 		returnType = a.ReturnTypes[0]
-		// 	}
-		// 	funcSymbolTable[a.Name] = FuncData{
-		// 		Index:      fnIndex,
-		// 		Name:       a.Name,
-		// 		Params:     map[string]FuncParam{},
-		// 		ReturnType: returnType,
-		// 	}
-		// 	for pi, param := range a.Parameters {
-		// 		funcSymbolTable[a.Name].Params[param.Name] = FuncParam{
-		// 			Index: pi,
-		// 			Name:  param.Name,
-		// 			Type:  param.Type.Name,
-		// 		}
-		// 	}
-		// 	err := emitTypes(typesBuffer, funcSymbolTable[a.Name])
-		// 	if err != nil {
-		// 		return nil, fmt.Errorf("Failed to emitTypes %v", err)
-		// 	}
-		// }
+		for _, a := range p.TypeAlias {
+			returnType := ""
+			// TODO: we need to remove the last item since '\n' gets captured somehow needs to be fixed later
+			if len(a.ReturnTypes) > 1 {
+				returnType = a.ReturnTypes[0]
+			}
+			externFuncsTable[a.Name] = FuncData{
+				Index:      len(externFuncsTable),
+				Name:       a.Name,
+				Params:     map[string]FuncParam{},
+				ReturnType: returnType,
+			}
+			for pi, param := range a.Parameters {
+				externFuncsTable[a.Name].Params[param.Name] = FuncParam{
+					Index: pi,
+					Name:  param.Name,
+					Type:  param.Type.Name,
+				}
+			}
+			err := emitTypes(typesBuffer, externFuncsTable[a.Name])
+			if err != nil {
+				return nil, fmt.Errorf("Failed to emitTypes %v", err)
+			}
+		}
 		for _, fun := range p.Funs {
 			fnIndex := len(funcSymbolTable)
 			returnType := ""
@@ -230,10 +231,10 @@ func GenerateCode(tree *ast.Ast) (*bytes.Buffer, error) {
 			if err != nil {
 				return nil, fmt.Errorf("Failed to emitTypes %v", err)
 			}
-			funcs = append(funcs, byte(fnIndex))           // function 0 signature index
-			exports = append(exports, byte(len(fun.Name))) // name length
-			exports = append(exports, []byte(fun.Name)...) // name
-			exports = append(exports, 0x00, byte(fnIndex)) // export kind, export funcindex
+			funcs = append(funcs, byte(len(externFuncsTable)+fnIndex)) // function 0 signature index
+			exports = append(exports, byte(len(fun.Name)))             // name length
+			exports = append(exports, []byte(fun.Name)...)             // name
+			exports = append(exports, 0x00, byte(fnIndex))             // export kind, export funcindex
 
 			funcbody := bytes.NewBuffer([]byte{
 				0x00, // local decl count
@@ -253,13 +254,14 @@ func GenerateCode(tree *ast.Ast) (*bytes.Buffer, error) {
 			funcBodys = append(funcBodys, byte(len(funcbody.Bytes())+1)) // funcbody size
 			funcBodys = append(funcBodys, funcbody.Bytes()...)
 			funcBodys = append(funcBodys, FUNC_END)
-			// if i == 0 {
-			// 	return fmt.Errorf(fmt.Sprintf("%+v", funcbody.Bytes()))
+			// if fnIndex == 1 {
+			// 	return nil, fmt.Errorf(fmt.Sprintf("%+v", funcbody.Bytes()))
 			// }
 		}
 	}
-	buffer.Write([]byte{0x01, byte(typesBuffer.Len() + 1), byte(len(funcSymbolTable))}) // Type section code, section size, num types, type data
+	buffer.Write([]byte{0x01, byte(typesBuffer.Len() + 1), byte(len(externFuncsTable) + len(funcSymbolTable))}) // Type section code, section size, num types, type data
 	buffer.Write(typesBuffer.Bytes())
+	// return nil, fmt.Errorf(fmt.Sprintf("%x", typesBuffer.Bytes()))
 	buffer.Write([]byte{0x03, byte(len(funcs) + 1), byte(len(funcSymbolTable))}) // funcsig section code, section size, num types, type data
 	buffer.Write(funcs)
 	buffer.Write([]byte{0x07, byte(len(exports) + 1), byte(len(funcSymbolTable))}) // exports section code, section size, num exports
@@ -284,3 +286,35 @@ func GenerateCode(tree *ast.Ast) (*bytes.Buffer, error) {
 // block (result i32 i32)
 //   ...
 // end
+
+// ; section "Import" (2)
+// 0000016: 02                                        ; section code
+// 0000017: 00                                        ; section size (guess)
+// 0000018: 01                                        ; num imports
+// ; import header 0
+// 0000019: 0d                                        ; string length
+// 000001a: 7761 7369 5f75 6e73 7461 626c 65         wasi_unstable  ; import module name
+// 0000027: 08                                        ; string length
+// 0000028: 6664 5f77 7269 7465                      fd_write  ; import field name
+// 0000030: 00                                        ; import kind
+// 0000031: 00                                        ; import signature index
+// 0000017: 1a                                        ; FIXUP section size
+
+// section "Type" (1)
+// 0000008: 01                                        ; section code
+// 0000009: 00                                        ; section size (guess)
+// 000000a: 02                                        ; num types
+// ; type 0
+// 000000b: 60                                        ; func
+// 000000c: 04                                        ; num params
+// 000000d: 7f                                        ; i32
+// 000000e: 7f                                        ; i32
+// 000000f: 7f                                        ; i32
+// 0000010: 7f                                        ; i32
+// 0000011: 01                                        ; num results
+// 0000012: 7f                                        ; i32
+// ; type 1
+// 0000013: 60                                        ; func
+// 0000014: 00                                        ; num params
+// 0000015: 00                                        ; num results
+// 0000009: 0c                                        ; FIXUP section size
