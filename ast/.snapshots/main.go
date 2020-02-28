@@ -5,40 +5,40 @@
       Pos: Position{Filename: "", Offset: 0, Line: 1, Column: 1},
       Name: &"wasi_unstable",
       Next: &"\n\n",
-      TypeAlias: []*ast.TypeAlias{
-        &ast.TypeAlias{
+      ExternFuncs: []*ast.ExternFunc{
+        &ast.ExternFunc{
           Pos: Position{Filename: "", Offset: 22, Line: 3, Column: 1},
           Name: "fd_write",
           Parameters: []*ast.FuncParameter{
             &ast.FuncParameter{
-              Pos: Position{Filename: "", Offset: 41, Line: 3, Column: 20},
+              Pos: Position{Filename: "", Offset: 43, Line: 3, Column: 22},
               Name: "a",
               Type: &ast.Type{
-                Pos: Position{Filename: "", Offset: 42, Line: 3, Column: 21},
+                Pos: Position{Filename: "", Offset: 44, Line: 3, Column: 23},
                 Name: "i32",
               },
             },
             &ast.FuncParameter{
-              Pos: Position{Filename: "", Offset: 49, Line: 3, Column: 28},
+              Pos: Position{Filename: "", Offset: 51, Line: 3, Column: 30},
               Name: "b",
               Type: &ast.Type{
-                Pos: Position{Filename: "", Offset: 50, Line: 3, Column: 29},
+                Pos: Position{Filename: "", Offset: 52, Line: 3, Column: 31},
                 Name: "i32",
               },
             },
             &ast.FuncParameter{
-              Pos: Position{Filename: "", Offset: 57, Line: 3, Column: 36},
+              Pos: Position{Filename: "", Offset: 59, Line: 3, Column: 38},
               Name: "c",
               Type: &ast.Type{
-                Pos: Position{Filename: "", Offset: 58, Line: 3, Column: 37},
+                Pos: Position{Filename: "", Offset: 60, Line: 3, Column: 39},
                 Name: "i32",
               },
             },
             &ast.FuncParameter{
-              Pos: Position{Filename: "", Offset: 65, Line: 3, Column: 44},
+              Pos: Position{Filename: "", Offset: 67, Line: 3, Column: 46},
               Name: "d",
               Type: &ast.Type{
-                Pos: Position{Filename: "", Offset: 66, Line: 3, Column: 45},
+                Pos: Position{Filename: "", Offset: 68, Line: 3, Column: 47},
                 Name: "i32",
               },
             },

@@ -183,7 +183,7 @@ func GenerateCode(tree *ast.Ast) (*bytes.Buffer, error) {
 	externFuncsTable := map[string]FuncData{}
 	funcSymbolTable := map[string]FuncData{}
 	for _, p := range tree.Modules {
-		for _, a := range p.TypeAlias {
+		for _, a := range p.ExternFuncs {
 			returnType := ""
 			// TODO: we need to remove the last item since '\n' gets captured somehow needs to be fixed later
 			if len(a.ReturnTypes) > 1 {
@@ -299,22 +299,3 @@ func GenerateCode(tree *ast.Ast) (*bytes.Buffer, error) {
 // 0000030: 00                                        ; import kind
 // 0000031: 00                                        ; import signature index
 // 0000017: 1a                                        ; FIXUP section size
-
-// section "Type" (1)
-// 0000008: 01                                        ; section code
-// 0000009: 00                                        ; section size (guess)
-// 000000a: 02                                        ; num types
-// ; type 0
-// 000000b: 60                                        ; func
-// 000000c: 04                                        ; num params
-// 000000d: 7f                                        ; i32
-// 000000e: 7f                                        ; i32
-// 000000f: 7f                                        ; i32
-// 0000010: 7f                                        ; i32
-// 0000011: 01                                        ; num results
-// 0000012: 7f                                        ; i32
-// ; type 1
-// 0000013: 60                                        ; func
-// 0000014: 00                                        ; num params
-// 0000015: 00                                        ; num results
-// 0000009: 0c                                        ; FIXUP section size

@@ -44,11 +44,11 @@ type Ast struct {
 }
 
 type Module struct {
-	Pos       lexer.Position
-	Name      *string            `"module" @Ident`
-	Next      *string            `@NewLine @NewLine`
-	Imports   []*ImportStatement `{ @@ }`
-	TypeAlias []*TypeAlias       `{ @@ }`
+	Pos         lexer.Position
+	Name        *string            `"module" @Ident`
+	Next        *string            `@NewLine @NewLine`
+	Imports     []*ImportStatement `{ @@ }`
+	ExternFuncs []*ExternFunc      `{ @@ }`
 	// CommentStatement []*CommentStatement `{ @@ }`
 	Structs []*Struct  `{ @@ }`
 	Funs    []*FunDecl `{ @@ }`
@@ -63,9 +63,9 @@ type ImportStatement struct {
 	End *string `@NewLine`
 }
 
-type TypeAlias struct {
+type ExternFunc struct {
 	Pos         lexer.Position
-	Name        string           `"type" @Ident`
+	Name        string           `"extern" @Ident`
 	Parameters  []*FuncParameter `"func""(" [ @@ { "," @@ } ] ")"`
 	ReturnTypes []string         `"-"">" [ @Ident { "," @Ident } ] @NewLine`
 	End         *string          `@NewLine`
