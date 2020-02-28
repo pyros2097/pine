@@ -9,6 +9,7 @@ import (
 
 var typeMap = map[string]byte{
 	"num": 0x7c,
+	"i32": 0x7f,
 }
 
 var operandMap = map[string]byte{
@@ -56,9 +57,10 @@ const LOCAL_GET = 0x20     // local.get
 const DECLARE_CONST = 0x41 // delcare const
 
 type FuncData struct {
-	Index  int
-	Name   string
-	Params map[string]FuncParam
+	Index      int
+	Name       string
+	Params     map[string]FuncParam
+	ReturnType string
 }
 
 type FuncParam struct {
@@ -76,7 +78,7 @@ func float64ToByte(f float64) []byte {
 	return buf.Bytes()
 }
 
-func operate(buffer *bytes.Buffer, funcName string, funcSymbolTable map[string]FuncData, operation *string, l *ast.Literal, r *ast.Expression) error {
+func emitExpression(buffer *bytes.Buffer, funcName string, funcSymbolTable map[string]FuncData, operation *string, l *ast.Literal, r *ast.Expression) error {
 	if l != nil && l.Num != nil {
 		buffer.WriteByte(operandMap["f64.const"])
 		buffer.Write(float64ToByte(*l.Num))
@@ -120,7 +122,7 @@ func operate(buffer *bytes.Buffer, funcName string, funcSymbolTable map[string]F
 			buffer.WriteByte(operandMap["call"])
 			buffer.WriteByte(byte(callFunc.Index))
 			if r.Operator != nil {
-				err := operate(buffer, funcName, funcSymbolTable, r.Operator, nil, r.Right)
+				err := emitExpression(buffer, funcName, funcSymbolTable, r.Operator, nil, r.Right)
 				if err != nil {
 					return err
 				}
@@ -137,7 +139,7 @@ func operate(buffer *bytes.Buffer, funcName string, funcSymbolTable map[string]F
 		buffer.WriteByte(operandMap[*operation])
 	}
 	if r.Operator != nil {
-		err := operate(buffer, funcName, funcSymbolTable, r.Operator, nil, r.Right)
+		err := emitExpression(buffer, funcName, funcSymbolTable, r.Operator, nil, r.Right)
 		if err != nil {
 			return err
 		}
@@ -145,58 +147,99 @@ func operate(buffer *bytes.Buffer, funcName string, funcSymbolTable map[string]F
 	return nil
 }
 
-func GenerateCode(ast *ast.Ast) (*bytes.Buffer, error) {
+func emitTypes(buffer *bytes.Buffer, fun FuncData) error {
+	buffer.WriteByte(0x60)                  // type func
+	buffer.WriteByte(byte(len(fun.Params))) // num params
+	for _, param := range fun.Params {      // i32, i32
+		t, ok := typeMap[param.Type]
+		if !ok {
+			return fmt.Errorf("func'" + fun.Name + "' parameter '" + param.Name + "' type '" + param.Type + "' does not exist")
+		}
+		buffer.WriteByte(t)
+	}
+	if fun.ReturnType != "" {
+		t, ok := typeMap[fun.ReturnType]
+		if !ok {
+			return fmt.Errorf("func'" + fun.Name + "' return type '" + fun.ReturnType + "' does not exist")
+		}
+		buffer.WriteByte(0x01) // num results
+		buffer.WriteByte(t)    // i32
+	} else {
+		buffer.WriteByte(0x00) // num results
+	}
+	return nil
+}
+
+func GenerateCode(tree *ast.Ast) (*bytes.Buffer, error) {
 	buffer := bytes.NewBuffer(nil)
 	buffer.Write([]byte{0x00, 0x61, 0x73, 0x6d}) // WASM_BINARY_MAGIC
 	buffer.Write([]byte{0x01, 0x00, 0x00, 0x00}) // WASM_BINARY_VERSION
 
-	types := []byte{} // num types, func, num params
+	typesBuffer := bytes.NewBuffer(nil)
 	funcs := []byte{}
 	exports := []byte{}
 	funcBodys := []byte{}
 	funcSymbolTable := map[string]FuncData{}
-	for _, p := range ast.Modules {
-		for i, fun := range p.Funs {
-			funcSymbolTable[fun.Name] = FuncData{
-				Index:  i,
-				Name:   fun.Name,
-				Params: map[string]FuncParam{},
+	for _, p := range tree.Modules {
+		// for _, a := range p.TypeAlias {
+		// 	fnIndex := len(funcSymbolTable)
+		// 	returnType := ""
+		// 	// TODO: we need to remove the last item since '\n' gets captured somehow needs to be fixed later
+		// 	if len(a.ReturnTypes) > 1 {
+		// 		returnType = a.ReturnTypes[0]
+		// 	}
+		// 	funcSymbolTable[a.Name] = FuncData{
+		// 		Index:      fnIndex,
+		// 		Name:       a.Name,
+		// 		Params:     map[string]FuncParam{},
+		// 		ReturnType: returnType,
+		// 	}
+		// 	for pi, param := range a.Parameters {
+		// 		funcSymbolTable[a.Name].Params[param.Name] = FuncParam{
+		// 			Index: pi,
+		// 			Name:  param.Name,
+		// 			Type:  param.Type.Name,
+		// 		}
+		// 	}
+		// 	err := emitTypes(typesBuffer, funcSymbolTable[a.Name])
+		// 	if err != nil {
+		// 		return nil, fmt.Errorf("Failed to emitTypes %v", err)
+		// 	}
+		// }
+		for _, fun := range p.Funs {
+			fnIndex := len(funcSymbolTable)
+			returnType := ""
+			if len(fun.ReturnTypes) > 1 {
+				returnType = fun.ReturnTypes[0]
 			}
-			types = append(types, 0x60, byte(len(fun.Parameters))) // func, num params
-			for pi, param := range fun.Parameters {                // i32, i32
-				t, ok := typeMap[param.Type.Name]
-				if !ok {
-					return nil, fmt.Errorf("func'" + fun.Name + "' parameter '" + param.Name + "' type '" + param.Type.Name + "' does not exist")
-				}
-				types = append(types, t)
+			funcData := FuncData{
+				Index:      fnIndex,
+				Name:       fun.Name,
+				Params:     map[string]FuncParam{},
+				ReturnType: returnType,
+			}
+			funcSymbolTable[fun.Name] = funcData
+			for pi, param := range fun.Parameters {
 				funcSymbolTable[fun.Name].Params[param.Name] = FuncParam{
 					Index: pi,
 					Name:  param.Name,
 					Type:  param.Type.Name,
 				}
 			}
-			// TODO: we need to remove the last item since '\n' gets captured somehow needs to be fixed later
-			fun.ReturnTypes = fun.ReturnTypes[:len(fun.ReturnTypes)-1]
-			if len(fun.ReturnTypes) > 0 {
-				t, ok := typeMap[fun.ReturnTypes[0]]
-				if !ok {
-					return nil, fmt.Errorf("func'" + fun.Name + "' return type '" + fun.ReturnTypes[0] + "' does not exist")
-				}
-				types = append(types, 0x01) // num results
-				types = append(types, t)    // i32
-			} else {
-				types = append(types, 0x00) // num results
+			err := emitTypes(typesBuffer, funcSymbolTable[fun.Name])
+			if err != nil {
+				return nil, fmt.Errorf("Failed to emitTypes %v", err)
 			}
-			funcs = append(funcs, byte(i))                 // function 0 signature index
+			funcs = append(funcs, byte(fnIndex))           // function 0 signature index
 			exports = append(exports, byte(len(fun.Name))) // name length
 			exports = append(exports, []byte(fun.Name)...) // name
-			exports = append(exports, 0x00, byte(i))       // export kind, export funcindex
+			exports = append(exports, 0x00, byte(fnIndex)) // export kind, export funcindex
 
 			funcbody := bytes.NewBuffer([]byte{
 				0x00, // local decl count
 			})
 			for i, s := range fun.Body {
-				err := operate(funcbody, fun.Name, funcSymbolTable, s.Exp.Operator, s.Exp.Left, s.Exp.Right)
+				err := emitExpression(funcbody, fun.Name, funcSymbolTable, s.Exp.Operator, s.Exp.Left, s.Exp.Right)
 				if err != nil {
 					return nil, err
 				}
@@ -204,7 +247,7 @@ func GenerateCode(ast *ast.Ast) (*bytes.Buffer, error) {
 					funcbody.WriteByte(operandMap["drop"])
 				}
 			}
-			if len(fun.ReturnTypes) == 0 {
+			if funcData.ReturnType == "" {
 				funcbody.WriteByte(operandMap["drop"])
 			}
 			funcBodys = append(funcBodys, byte(len(funcbody.Bytes())+1)) // funcbody size
@@ -214,15 +257,15 @@ func GenerateCode(ast *ast.Ast) (*bytes.Buffer, error) {
 			// 	return fmt.Errorf(fmt.Sprintf("%+v", funcbody.Bytes()))
 			// }
 		}
-		buffer.Write([]byte{0x01, byte(len(types) + 1), byte(len(p.Funs))}) // Type section code, section size, num types, type data
-		buffer.Write(types)
-		buffer.Write([]byte{0x03, byte(len(funcs) + 1), byte(len(p.Funs))}) // funcsig section code, section size, num types, type data
-		buffer.Write(funcs)
-		buffer.Write([]byte{0x07, byte(len(exports) + 1), byte(len(p.Funs))}) // exports section code, section size, num exports
-		buffer.Write(exports)
-		buffer.Write([]byte{0x0a, byte(len(funcBodys) + 1), byte(len(p.Funs))}) // funcbody section code, section size, num functions
-		buffer.Write(funcBodys)
 	}
+	buffer.Write([]byte{0x01, byte(typesBuffer.Len() + 1), byte(len(funcSymbolTable))}) // Type section code, section size, num types, type data
+	buffer.Write(typesBuffer.Bytes())
+	buffer.Write([]byte{0x03, byte(len(funcs) + 1), byte(len(funcSymbolTable))}) // funcsig section code, section size, num types, type data
+	buffer.Write(funcs)
+	buffer.Write([]byte{0x07, byte(len(exports) + 1), byte(len(funcSymbolTable))}) // exports section code, section size, num exports
+	buffer.Write(exports)
+	buffer.Write([]byte{0x0a, byte(len(funcBodys) + 1), byte(len(funcSymbolTable))}) // funcbody section code, section size, num functions
+	buffer.Write(funcBodys)
 	return buffer, nil
 }
 

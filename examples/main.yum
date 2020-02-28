@@ -1,6 +1,6 @@
 module main
 
-import "github.com/yum/std"
+import "github.com/yum/wasi_unstable"
 // some_stuff = a: num, b: num ->
 //   a + b + 4
 add = a: num, b: num -> num

@@ -1,7 +1,9 @@
 package ast
 
 import (
+	"fmt"
 	"io/ioutil"
+	"strings"
 
 	"github.com/alecthomas/participle"
 	"github.com/alecthomas/participle/lexer"
@@ -16,12 +18,24 @@ func ParseFile(filename string) (*Ast, error) {
 	if err != nil {
 		return nil, err
 	}
-	ast := &Ast{}
-	err = parser.ParseBytes(data, ast)
+	tree := &Ast{}
+	err = parser.ParseBytes(data, tree)
 	if err != nil {
 		return nil, err
 	}
-	return ast, nil
+	for _, p := range tree.Modules {
+		for _, imp := range p.Imports {
+			parts := strings.Split(imp.Url, "/")
+			moduleName := parts[len(parts)-1]
+			println(moduleName)
+			subTree, err := ParseFile("/Users/peterjohn/Code/yum/examples/" + moduleName + ".yum")
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse module: %s -> %v", moduleName, err)
+			}
+			tree.Modules = append(subTree.Modules, tree.Modules...)
+		}
+	}
+	return tree, nil
 }
 
 type Ast struct {
@@ -30,9 +44,11 @@ type Ast struct {
 }
 
 type Module struct {
-	Pos     lexer.Position
-	Name    *string            `"module" @Ident @NewLine @NewLine`
-	Imports []*ImportStatement `{ @@ }`
+	Pos       lexer.Position
+	Name      *string            `"module" @Ident`
+	Next      *string            `@NewLine @NewLine`
+	Imports   []*ImportStatement `{ @@ }`
+	TypeAlias []*TypeAlias       `{ @@ }`
 	// CommentStatement []*CommentStatement `{ @@ }`
 	Structs []*Struct  `{ @@ }`
 	Funs    []*FunDecl `{ @@ }`
@@ -42,8 +58,17 @@ type Module struct {
 }
 
 type ImportStatement struct {
-	Pos  lexer.Position
-	Name string `"import" @String @NewLine`
+	Pos lexer.Position
+	Url string  `"import" @String`
+	End *string `@NewLine`
+}
+
+type TypeAlias struct {
+	Pos         lexer.Position
+	Name        string           `"type" @Ident`
+	Parameters  []*FuncParameter `"func""(" [ @@ { "," @@ } ] ")"`
+	ReturnTypes []string         `"-"">" [ @Ident { "," @Ident } ] @NewLine`
+	End         *string          `@NewLine`
 }
 
 // type CommentStatement struct {
