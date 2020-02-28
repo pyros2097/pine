@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"yum/ast"
 	"yum/code_gen"
@@ -29,10 +28,23 @@ func main() {
 	}
 	defer instance.Close()
 
-	mainFunc := instance.Exports["main"]
-	result, err := mainFunc()
+	if _, ok := instance.Exports["main"]; !ok {
+		panic("You need to have a function named 'main' which takes no arguments and return none")
+	}
+	_, err = instance.Exports["main"]()
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(result)
 }
+
+// register_route("path", pathParameters, queryPameters, callback) will be in c
+// callback: will be wasm func which in this case will take pathParams and queryParams as parameters
+// @route("/users/:id", "name", "date") will be a decorator function in wasm
+// which will get the details of the callback -> fn index, params and call register route
+
+// func route(path string, f ast.Func) {
+// 	pathParams := []string{}
+// 	queryParams := []string{}
+//   f.returnType != 'Html' panic('asda')
+// 	register_route("path", pathParameters, queryPameters, f.Index)
+// }

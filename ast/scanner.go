@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strconv"
 	"unicode"
 	"unicode/utf8"
 )
@@ -202,7 +201,6 @@ func (s *Scanner) Init(src io.Reader) *Scanner {
 // to check for newlines).
 func (s *Scanner) next() rune {
 	ch, width := rune(s.srcBuf[s.srcPos]), 1
-	fmt.Println(ch, strconv.QuoteRune(ch))
 
 	if ch >= utf8.RuneSelf {
 		// uncommon case: not ASCII or not enough bytes
@@ -276,7 +274,6 @@ func (s *Scanner) next() rune {
 		s.line++
 		s.lastLineLen = s.column
 		s.column = 0
-		println("\\n")
 	}
 
 	return ch
@@ -588,7 +585,6 @@ redo:
 	default:
 		switch ch {
 		case EOF:
-			println("EOF")
 			break
 		case '"':
 			if s.Mode&ScanStrings != 0 {
