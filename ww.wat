@@ -4,6 +4,8 @@
 ;;   (export "memory" (memory 0))
 ;;   (data (i32.const 8) "hello world\n")
 
+  (import "wasi_unstable" "fd_write" (func $fd_write (param i32 i32 i32 i32) (result i32)))
+
   (func $main (export "main")
     (f64.add
         (f64.const 1)

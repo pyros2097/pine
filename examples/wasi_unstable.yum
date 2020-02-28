@@ -1,0 +1,5 @@
+module wasi_unstable
+
+extern fd_write(a: i32, b: i32, c: i32, d: i32) -> i32
+extern environ_get(i32, i32)
+extern environ_sizes_get() -> i32, i32

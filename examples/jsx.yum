@@ -1,0 +1,9 @@
+module main
+
+HomeScreen = a: num, b: num -> num
+  <Window a="123" b="123">
+    <View>
+    </View>
+    <div>
+    </div>
+  </Window>

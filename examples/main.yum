@@ -1,5 +1,6 @@
 module main
 
+import "github.com/yum/std"
 // some_stuff = a: num, b: num ->
 //   a + b + 4
 add = a: num, b: num -> num
@@ -14,6 +15,6 @@ another = a: num, b: num -> num
 main = ->
   1 + 2
   3 + 4
-//  some_stuff(a, b)
   another(1, 5)
 
+// "123 ${b} ${b}"

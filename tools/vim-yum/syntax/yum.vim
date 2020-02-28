@@ -30,7 +30,7 @@ hi def link     yumPredefinedIdentifiers    goBoolean
 
 " Comments; their contents
 syn keyword     yumTodo              contained TODO FIXME XXX BUG
-syn region      yumComment           start="#" end="$"
+syn region      yumComment           start="//" end="$"
 hi def link     yumComment           Comment
 hi def link     yumTodo              Todo
 

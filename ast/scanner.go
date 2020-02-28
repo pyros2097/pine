@@ -495,7 +495,6 @@ func (s *Scanner) scanChar() {
 }
 
 func (s *Scanner) scanComment(ch rune) rune {
-	// ch == '/' || ch == '*'
 	if ch == '/' {
 		// line comment
 		ch = s.next() // read character after "//"
@@ -508,21 +507,6 @@ func (s *Scanner) scanComment(ch rune) rune {
 		}
 		return ch
 	}
-
-	// general comment
-	// ch = s.next() // read character after "/*"
-	// for {
-	// 	if ch < 0 {
-	// 		s.error("comment not terminated")
-	// 		break
-	// 	}
-	// 	ch0 := ch
-	// 	ch = s.next()
-	// 	if ch0 == '*' && ch == '/' {
-	// 		ch = s.next()
-	// 		break
-	// 	}
-	// }
 	return ch
 }
 
@@ -607,15 +591,13 @@ redo:
 			}
 		case '/':
 			ch = s.next()
-			if (ch == '/' || ch == '*') && s.Mode&ScanComments != 0 {
+			if (ch == '/') && s.Mode&ScanComments != 0 {
 				// skip comments for now
-				if true {
-					s.tokPos = -1 // don't collect token text
-					ch = s.scanComment(ch)
-					goto redo
-				}
+				s.tokPos = -1 // don't collect token text
 				ch = s.scanComment(ch)
-				tok = Comment
+				goto redo
+				// ch = s.scanComment(ch)
+				// tok = Comment
 			}
 		case '`':
 			if s.Mode&ScanRawStrings != 0 {

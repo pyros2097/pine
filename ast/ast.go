@@ -33,8 +33,9 @@ type Module struct {
 	Pos     lexer.Position
 	Name    *string            `"module" @Ident @NewLine @NewLine`
 	Imports []*ImportStatement `{ @@ }`
-	Structs []*Struct          `{ @@ }`
-	Funs    []*FunDecl         `{ @@ }`
+	// CommentStatement []*CommentStatement `{ @@ }`
+	Structs []*Struct  `{ @@ }`
+	Funs    []*FunDecl `{ @@ }`
 	// Enums    []*Enum            `| @@`
 	Typedefs []*Typedef `{ @@ }`
 	// Consts     []*ConstAssignment `| @@`
@@ -42,8 +43,13 @@ type Module struct {
 
 type ImportStatement struct {
 	Pos  lexer.Position
-	Name string `"import" @Ident`
+	Name string `"import" @String @NewLine`
 }
+
+// type CommentStatement struct {
+// 	Pos  lexer.Position
+// 	Text string `@Comment`
+// }
 
 type Type struct {
 	Pos  lexer.Position
