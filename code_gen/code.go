@@ -5,6 +5,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"yum/ast"
+
+	"github.com/alecthomas/repr"
 )
 
 var typeMap = map[string]byte{
@@ -78,12 +80,16 @@ func float64ToByte(f float64) []byte {
 	return buf.Bytes()
 }
 
+// func emitString(f)
+
 func emitExpression(buffer *bytes.Buffer, funcName string, funcSymbolTable map[string]FuncData, operation *string, l *ast.Literal, r *ast.Expression) error {
 	if l != nil && l.Num != nil {
 		buffer.WriteByte(operandMap["f64.const"])
 		buffer.Write(float64ToByte(*l.Num))
 	}
-	if r.Left.Num != nil {
+	if l != nil && l.Str != nil {
+	}
+	if r.Left != nil && r.Left.Num != nil {
 		buffer.WriteByte(operandMap["f64.const"])
 		buffer.Write(float64ToByte(*r.Left.Num))
 		buffer.WriteByte(operandMap[*operation])
@@ -121,6 +127,7 @@ func emitExpression(buffer *bytes.Buffer, funcName string, funcSymbolTable map[s
 			}
 			buffer.WriteByte(operandMap["call"])
 			buffer.WriteByte(byte(callFunc.Index))
+			// return fmt.Errorf("%s %d", callFunc.Name, callFunc.Index)
 			if r.Operator != nil {
 				err := emitExpression(buffer, funcName, funcSymbolTable, r.Operator, nil, r.Right)
 				if err != nil {
@@ -171,55 +178,63 @@ func emitTypes(buffer *bytes.Buffer, fun FuncData) error {
 	return nil
 }
 
+// _pointer = a: string -> i32
+// (i32.store (i32.const 0) (i32.const 8)) // iov.iov_base - This is a pointer to the start of the 'hello world\n' string
+
+// _length = a: string -> i32
+// (i32.store (i32.const 4) (i32.const 12)) // iov.iov_len - The length of the 'hello world\n' string
+
 func GenerateCode(tree *ast.Ast) (*bytes.Buffer, error) {
 	buffer := bytes.NewBuffer(nil)
 	buffer.Write([]byte{0x00, 0x61, 0x73, 0x6d}) // WASM_BINARY_MAGIC
 	buffer.Write([]byte{0x01, 0x00, 0x00, 0x00}) // WASM_BINARY_VERSION
 
-	typesBuffer := bytes.NewBuffer(nil)
+	typesSection := bytes.NewBuffer(nil)
+	importsSection := bytes.NewBuffer(nil)
 	funcs := []byte{}
 	exports := []byte{}
 	funcBodys := []byte{}
-	externFuncsTable := map[string]FuncData{}
+	externFuncsCount := 0
+	funcsCount := 0
 	funcSymbolTable := map[string]FuncData{}
 	for _, p := range tree.Modules {
 		for _, a := range p.ExternFuncs {
-			returnType := ""
-			// TODO: we need to remove the last item since '\n' gets captured somehow needs to be fixed later
-			if len(a.ReturnTypes) > 1 {
-				returnType = a.ReturnTypes[0]
-			}
-			externFuncsTable[a.Name] = FuncData{
-				Index:      len(externFuncsTable),
+			funcSymbolTable[a.Name] = FuncData{
+				Index:      externFuncsCount,
 				Name:       a.Name,
 				Params:     map[string]FuncParam{},
-				ReturnType: returnType,
+				ReturnType: a.ReturnType,
 			}
 			for pi, param := range a.Parameters {
-				externFuncsTable[a.Name].Params[param.Name] = FuncParam{
+				funcSymbolTable[a.Name].Params[param.Name] = FuncParam{
 					Index: pi,
 					Name:  param.Name,
 					Type:  param.Type.Name,
 				}
 			}
-			err := emitTypes(typesBuffer, externFuncsTable[a.Name])
+			err := emitTypes(typesSection, funcSymbolTable[a.Name])
 			if err != nil {
 				return nil, fmt.Errorf("Failed to emitTypes %v", err)
 			}
+			importsSection.WriteByte(byte(len(p.Name)))      // module name length
+			importsSection.Write([]byte(p.Name))             // module name
+			importsSection.WriteByte(byte(len(a.Name)))      // fn name length
+			importsSection.Write([]byte(a.Name))             // fn name
+			importsSection.WriteByte(0x00)                   // import kind
+			importsSection.WriteByte(byte(externFuncsCount)) // import signature index
+			externFuncsCount += 1
 		}
 		for _, fun := range p.Funs {
-			fnIndex := len(funcSymbolTable)
 			returnType := ""
 			if len(fun.ReturnTypes) > 1 {
 				returnType = fun.ReturnTypes[0]
 			}
-			funcData := FuncData{
-				Index:      fnIndex,
+			funcSymbolTable[fun.Name] = FuncData{
+				Index:      externFuncsCount + funcsCount,
 				Name:       fun.Name,
 				Params:     map[string]FuncParam{},
 				ReturnType: returnType,
 			}
-			funcSymbolTable[fun.Name] = funcData
 			for pi, param := range fun.Parameters {
 				funcSymbolTable[fun.Name].Params[param.Name] = FuncParam{
 					Index: pi,
@@ -227,14 +242,14 @@ func GenerateCode(tree *ast.Ast) (*bytes.Buffer, error) {
 					Type:  param.Type.Name,
 				}
 			}
-			err := emitTypes(typesBuffer, funcSymbolTable[fun.Name])
+			err := emitTypes(typesSection, funcSymbolTable[fun.Name])
 			if err != nil {
 				return nil, fmt.Errorf("Failed to emitTypes %v", err)
 			}
-			funcs = append(funcs, byte(len(externFuncsTable)+fnIndex)) // function 0 signature index
-			exports = append(exports, byte(len(fun.Name)))             // name length
-			exports = append(exports, []byte(fun.Name)...)             // name
-			exports = append(exports, 0x00, byte(fnIndex))             // export kind, export funcindex
+			funcs = append(funcs, byte(externFuncsCount+funcsCount))           // function 0 signature index
+			exports = append(exports, byte(len(fun.Name)))                     // name length
+			exports = append(exports, []byte(fun.Name)...)                     // name
+			exports = append(exports, 0x00, byte(externFuncsCount+funcsCount)) // export kind, export funcindex
 
 			funcbody := bytes.NewBuffer([]byte{
 				0x00, // local decl count
@@ -248,7 +263,7 @@ func GenerateCode(tree *ast.Ast) (*bytes.Buffer, error) {
 					funcbody.WriteByte(operandMap["drop"])
 				}
 			}
-			if funcData.ReturnType == "" {
+			if funcSymbolTable[fun.Name].ReturnType == "" {
 				funcbody.WriteByte(operandMap["drop"])
 			}
 			funcBodys = append(funcBodys, byte(len(funcbody.Bytes())+1)) // funcbody size
@@ -257,45 +272,22 @@ func GenerateCode(tree *ast.Ast) (*bytes.Buffer, error) {
 			// if fnIndex == 1 {
 			// 	return nil, fmt.Errorf(fmt.Sprintf("%+v", funcbody.Bytes()))
 			// }
+			funcsCount += 1
 		}
 	}
-	buffer.Write([]byte{0x01, byte(typesBuffer.Len() + 1), byte(len(externFuncsTable) + len(funcSymbolTable))}) // Type section code, section size, num types, type data
-	buffer.Write(typesBuffer.Bytes())
-	// return nil, fmt.Errorf(fmt.Sprintf("%x", typesBuffer.Bytes()))
-	buffer.Write([]byte{0x03, byte(len(funcs) + 1), byte(len(funcSymbolTable))}) // funcsig section code, section size, num types, type data
+	repr.Println(funcSymbolTable)
+	buffer.Write([]byte{0x01, byte(typesSection.Len() + 1), byte(externFuncsCount + funcsCount)}) // Type section code, section size, num types, type data
+	buffer.Write(typesSection.Bytes())
+	buffer.Write([]byte{0x02, byte(importsSection.Len() + 1), byte(externFuncsCount)}) // Imports section, section size, num imports, type data
+	buffer.Write(importsSection.Bytes())
+	buffer.Write([]byte{0x03, byte(len(funcs) + 1), byte(funcsCount)}) // Func Sig section code, section size, num types, type data
 	buffer.Write(funcs)
-	buffer.Write([]byte{0x07, byte(len(exports) + 1), byte(len(funcSymbolTable))}) // exports section code, section size, num exports
+	buffer.Write([]byte{0x05, 0x03, 0x01, 0x00, 0x01})                   // Memory section code, section size, num memories, flags, initial (1 page 64KB)
+	buffer.Write([]byte{0x07, byte(len(exports) + 1), byte(funcsCount)}) // exports section code, section size, num exports
 	buffer.Write(exports)
-	buffer.Write([]byte{0x0a, byte(len(funcBodys) + 1), byte(len(funcSymbolTable))}) // funcbody section code, section size, num functions
+	buffer.Write([]byte{0x0a, byte(len(funcBodys) + 1), byte(funcsCount)}) // funcbody section code, section size, num functions
 	buffer.Write(funcBodys)
+	// buffer.Write([]byte{0x0b, byte(len(dataBodys) + 1), byte(len(datas))}) // Data section code, section size, num data segments
+	// buffer.Write(dataBodys)
 	return buffer, nil
 }
-
-// ;; A function that takes an `i64` and returns
-// ;; three `i32`s.
-// (func(param i64) (result i32 i32 i32)
-//   ...)
-
-// ;; A loop that consumes an `i32` stack value
-// ;; at the start of each iteration.
-// loop (param i32)
-//   ...
-// end
-
-// ;; A block that produces two `i32` stack values.
-// block (result i32 i32)
-//   ...
-// end
-
-// ; section "Import" (2)
-// 0000016: 02                                        ; section code
-// 0000017: 00                                        ; section size (guess)
-// 0000018: 01                                        ; num imports
-// ; import header 0
-// 0000019: 0d                                        ; string length
-// 000001a: 7761 7369 5f75 6e73 7461 626c 65         wasi_unstable  ; import module name
-// 0000027: 08                                        ; string length
-// 0000028: 6664 5f77 7269 7465                      fd_write  ; import field name
-// 0000030: 00                                        ; import kind
-// 0000031: 00                                        ; import signature index
-// 0000017: 1a                                        ; FIXUP section size

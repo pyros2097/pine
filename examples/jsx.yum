@@ -1,6 +1,7 @@
 module main
 
-HomeScreen = a: num, b: num -> num
+HomeScreen -> Num -> Num -> Num
+HomeScreen a b c =
   <Window a="123" b="123">
     <View>
     </View>

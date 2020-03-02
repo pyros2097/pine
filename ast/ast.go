@@ -45,30 +45,31 @@ type Ast struct {
 
 type Module struct {
 	Pos         lexer.Position
-	Name        *string            `"module" @Ident`
-	Next        *string            `@NewLine @NewLine`
+	Name        string             `"module" @Ident`
+	End         *string            `@NewLine`
 	Imports     []*ImportStatement `{ @@ }`
 	ExternFuncs []*ExternFunc      `{ @@ }`
-	// CommentStatement []*CommentStatement `{ @@ }`
-	Structs []*Struct  `{ @@ }`
-	Funs    []*FunDecl `{ @@ }`
+	Classes     []*Class           `{ @@ }`
+	Funs        []*FunDecl         `{ @@ }`
 	// Enums    []*Enum            `| @@`
 	Typedefs []*Typedef `{ @@ }`
 	// Consts     []*ConstAssignment `| @@`
 }
 
 type ImportStatement struct {
-	Pos lexer.Position
-	Url string  `"import" @String`
-	End *string `@NewLine`
+	Pos   lexer.Position
+	Start *string `@NewLine`
+	Url   string  `"import" @String`
+	End   *string `@NewLine`
 }
 
 type ExternFunc struct {
-	Pos         lexer.Position
-	Name        string           `"extern" @Ident`
-	Parameters  []*FuncParameter `"func""(" [ @@ { "," @@ } ] ")"`
-	ReturnTypes []string         `"-"">" [ @Ident { "," @Ident } ] @NewLine`
-	End         *string          `@NewLine`
+	Pos        lexer.Position
+	Start      string           `@NewLine`
+	Name       string           `"extern" @Ident`
+	Parameters []*FuncParameter `"func""(" [ @@ { "," @@ } ] ")"`
+	ReturnType string           `"-"">" { @Ident }`
+	End        *string          `@NewLine`
 }
 
 // type CommentStatement struct {
@@ -92,6 +93,11 @@ type KeyValue struct {
 	Value *Literal `"=" @@`
 }
 
+type ClassTrait struct {
+	Pos lexer.Position
+	ID  string `@Ident`
+}
+
 type ClassField struct {
 	Pos  lexer.Position
 	Name string `@Ident`
@@ -100,18 +106,16 @@ type ClassField struct {
 	// Annotations []*Annotation `[ "(" @@ { "," @@ } ")" ] [ ";" ]`
 }
 
-type Struct struct {
-	Pos     lexer.Position
-	Name    string         `"class" @Ident`
-	Traits  []*ClassTrait  `{ "(" [ @@ { "," @@ } ] ")" }`
-	Fields  []*ClassField  `{ @@ }`
-	Methods []*Fun         `{ @@ }`
-	End     lexer.Position `"end"`
-}
-
-type ClassTrait struct {
-	Pos lexer.Position
-	ID  string `@Ident`
+type Class struct {
+	Pos   lexer.Position
+	Start string  `@NewLine`
+	Name  string  `"class" @Ident`
+	Next  *string `@NewLine`
+	// Fields        []*ClassField   `{ @@ }`
+	CompilerFuncs []*CompilerFunc `{ @@ }`
+	// CommentStatement []*CommentStatement `{ @@ }`
+	// Methods []*Fun         `{ @@ }`
+	End *string `@NewLine`
 }
 
 type Enum struct {
@@ -144,13 +148,25 @@ type DecoratorDecl struct {
 	Values []*Literal `"(" [ @@ { "," @@ } ] ")"`
 }
 
+type CompilerFunc struct {
+	Pos               lexer.Position
+	Start             string           `@NewLine`
+	Name              string           `@Ident ":"`
+	Parameters        []*FuncParameter `[ @@ { "," @@ } ]`
+	ReturnTypes       []string         `"-"">" [ @Ident { "," @Ident } ] @NewLine`
+	CompilerIntrinsic string           `"__compiler__gen__"`
+	End               *string          `@NewLine`
+}
+
 type FunDecl struct {
-	Pos         lexer.Position
-	Name        string           `@Ident "="`
-	Parameters  []*FuncParameter `[ @@ { "," @@ } ]`
-	ReturnTypes []string         `"-"">" [ @Ident { "," @Ident } ] @NewLine`
-	Body        []*Block         `{ @@ }`
-	End         *string          `@NewLine`
+	Pos               lexer.Position
+	Start             string           `@NewLine`
+	Name              string           `@Ident "="`
+	Parameters        []*FuncParameter `[ @@ { "," @@ } ]`
+	ReturnTypes       []string         `"-"">" [ @Ident { "," @Ident } ] @NewLine`
+	Body              []*Block         `{ @@ }`
+	CompilerIntrinsic string           `| "__compiler__gen__"`
+	End               *string          `@NewLine`
 }
 
 type Fun struct {

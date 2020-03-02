@@ -1,20 +1,20 @@
 module main
 
 import "github.com/yum/wasi_unstable"
-// some_stuff = a: num, b: num ->
-//   a + b + 4
+
+class String
+
+  ptr: -> i32
+    __compiler__gen__
+
+  length: -> i32
+    __compiler__gen__
+
+
 add = a: num, b: num -> num
   a + b + 4
 
-another = a: num, b: num -> num
-  add(a, b)
-
-// useGlobal<T> = key: string, default: T -> T
-// hacky stuff
-// name, setName := useGlobal<string>("name", "123")
 main = ->
-  1 + 2
-  3 + 4
-  another(1, 5)
-
-// "123 ${b} ${b}"
+  1 + 1
+  add(1, 2)
+  // fd_write(0, 1, 2, 3)

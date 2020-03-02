@@ -17,6 +17,3 @@ println data: string = ->
 println("1233435")
 
 println("${a} ${b}")
-
-github.com/yum/wasi_unstable
-github.com/yum/std
