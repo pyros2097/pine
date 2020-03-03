@@ -54,7 +54,100 @@ func emitOperation(buffer *bytes.Buffer, funcName, operation string) error {
 	return nil
 }
 
-func emitExpression(buffer *bytes.Buffer, funcName string, funcSymbolTable map[string]FuncData, operation *string, l *ast.Literal, r *ast.Expression) error {
+// _pointer = a: string -> i32
+// (i32.store (i32.const 0) (i32.const 8)) // iov.iov_base - This is a pointer to the start of the 'hello world\n' string
+
+// _length = a: string -> i32
+// (i32.store (i32.const 4) (i32.const 12)) // iov.iov_len - The length of the 'hello world\n' string
+
+type Emitter struct {
+	TypesSection     *bytes.Buffer
+	ImportsSection   *bytes.Buffer
+	FuncsSection     *bytes.Buffer
+	ExportsSection   *bytes.Buffer
+	FuncsBodySection *bytes.Buffer
+	Tree             *ast.Ast
+	funcs            map[string]FuncData
+}
+
+func NewEmitter(tree *ast.Ast) Emitter {
+	return Emitter{
+		TypesSection:     bytes.NewBuffer(nil),
+		ImportsSection:   bytes.NewBuffer(nil),
+		FuncsSection:     bytes.NewBuffer(nil),
+		ExportsSection:   bytes.NewBuffer(nil),
+		FuncsBodySection: bytes.NewBuffer(nil),
+		funcs:            map[string]FuncData{},
+		Tree:             tree,
+	}
+}
+
+func (e Emitter) EmitTypes(name string) error {
+	fun := e.funcs[name]
+	e.TypesSection.WriteByte(0x60)                  // type func
+	e.TypesSection.WriteByte(byte(len(fun.Params))) // num params
+	for _, param := range fun.Params {              // i32, i32
+		t, ok := typeMap[param.Type]
+		if !ok {
+			return fmt.Errorf("func'" + fun.Name + "' parameter '" + param.Name + "' type '" + param.Type + "' does not exist")
+		}
+		e.TypesSection.WriteByte(t)
+	}
+	if fun.ReturnType != "" {
+		t, ok := typeMap[fun.ReturnType]
+		if !ok {
+			return fmt.Errorf("func'" + fun.Name + "' return type '" + fun.ReturnType + "' does not exist")
+		}
+		e.TypesSection.WriteByte(0x01) // num results
+		e.TypesSection.WriteByte(t)    // i32
+	} else {
+		e.TypesSection.WriteByte(0x00) // num results
+	}
+	// panic(repr.String(buffer.Bytes()))
+	return nil
+}
+
+func (e Emitter) EmitImports(moduleName, funcName string, typeIndex int) {
+	e.ImportsSection.WriteByte(byte(len(moduleName))) // module name length
+	e.ImportsSection.Write([]byte(moduleName))        // module name
+	e.ImportsSection.WriteByte(byte(len(funcName)))   // fn name length
+	e.ImportsSection.Write([]byte(funcName))          // fn name
+	e.ImportsSection.WriteByte(0x00)                  // import kind
+	e.ImportsSection.WriteByte(byte(typeIndex))       // import signature index
+}
+
+func (e Emitter) EmitFuncs(name string, typeIndex int) {
+	e.FuncsSection.WriteByte(byte(typeIndex))
+	e.ExportsSection.WriteByte(byte(len(name))) // name length
+	e.ExportsSection.Write([]byte(name))
+	e.ExportsSection.WriteByte(0x00)            // export kind
+	e.ExportsSection.WriteByte(byte(typeIndex)) // export funcindex
+}
+
+func (e Emitter) EmitExports(typeIndex int) {
+	e.FuncsSection.WriteByte(byte(typeIndex))
+}
+
+func (e Emitter) EmitFuncBody(name string, body []*ast.Block) (*bytes.Buffer, error) {
+	buf := bytes.NewBuffer([]byte{
+		0x00, // local decl count
+	})
+	for i, s := range body {
+		err := e.emitExpression(buf, name, s.Exp.Operator, s.Exp.Left, s.Exp.Right)
+		if err != nil {
+			return nil, err
+		}
+		if i != len(body)-1 {
+			buf.WriteByte(op.DROP)
+		}
+	}
+	if e.funcs[name].ReturnType == "" {
+		buf.WriteByte(op.DROP)
+	}
+	return buf, nil
+}
+
+func (e Emitter) emitExpression(buffer *bytes.Buffer, funcName string, operation *string, l *ast.Literal, r *ast.Expression) error {
 	if l != nil && l.Num != nil {
 		buffer.WriteByte(op.F64_CONST)
 		buffer.Write(float64ToByte(*l.Num))
@@ -76,7 +169,7 @@ func emitExpression(buffer *bytes.Buffer, funcName string, funcSymbolTable map[s
 	}
 	if l != nil && l.Reference != nil {
 		if operation != nil {
-			ref, ok := funcSymbolTable[funcName].Params[*l.Reference]
+			ref, ok := e.funcs[funcName].Params[*l.Reference]
 			if !ok {
 				return fmt.Errorf("func '%s' parameter '%s' does not exist", funcName, *l.Reference)
 			}
@@ -84,7 +177,7 @@ func emitExpression(buffer *bytes.Buffer, funcName string, funcSymbolTable map[s
 			buffer.WriteByte(byte(ref.Index))
 		} else {
 			// funcCALL
-			callFunc, ok := funcSymbolTable[*l.Reference]
+			callFunc, ok := e.funcs[*l.Reference]
 			if !ok {
 				return fmt.Errorf("func '%s' trying to call non-existing func '%s'", funcName, *l.Reference)
 			}
@@ -133,7 +226,7 @@ func emitExpression(buffer *bytes.Buffer, funcName string, funcSymbolTable map[s
 					buffer.WriteByte(byte(int32(*v.Num)))
 				}
 				if v.Reference != nil {
-					vref, ok := funcSymbolTable[funcName].Params[*v.Reference]
+					vref, ok := e.funcs[funcName].Params[*v.Reference]
 					if !ok {
 						return fmt.Errorf("func'" + funcName + "' trying to call '" + callFunc.Name + "' with non-existing variable " + *v.Reference)
 					}
@@ -148,7 +241,7 @@ func emitExpression(buffer *bytes.Buffer, funcName string, funcSymbolTable map[s
 			buffer.WriteByte(op.CALL)
 			buffer.WriteByte(byte(callFunc.Index))
 			if r.Operator != nil {
-				err := emitExpression(buffer, funcName, funcSymbolTable, r.Operator, nil, r.Right)
+				err := e.emitExpression(buffer, funcName, r.Operator, nil, r.Right)
 				if err != nil {
 					return err
 				}
@@ -156,7 +249,7 @@ func emitExpression(buffer *bytes.Buffer, funcName string, funcSymbolTable map[s
 		}
 	}
 	if r != nil && r.Left != nil && r.Left.Reference != nil {
-		ref, ok := funcSymbolTable[funcName].Params[*r.Left.Reference]
+		ref, ok := e.funcs[funcName].Params[*r.Left.Reference]
 		if !ok {
 			return fmt.Errorf("func'" + funcName + "' parameter '" + *r.Left.Reference + "' does not exist")
 		}
@@ -165,7 +258,7 @@ func emitExpression(buffer *bytes.Buffer, funcName string, funcSymbolTable map[s
 		emitOperation(buffer, funcName, *operation)
 	}
 	if r != nil && r.Operator != nil {
-		err := emitExpression(buffer, funcName, funcSymbolTable, r.Operator, nil, r.Right)
+		err := e.emitExpression(buffer, funcName, r.Operator, nil, r.Right)
 		if err != nil {
 			return err
 		}
@@ -173,104 +266,29 @@ func emitExpression(buffer *bytes.Buffer, funcName string, funcSymbolTable map[s
 	return nil
 }
 
-// _pointer = a: string -> i32
-// (i32.store (i32.const 0) (i32.const 8)) // iov.iov_base - This is a pointer to the start of the 'hello world\n' string
-
-// _length = a: string -> i32
-// (i32.store (i32.const 4) (i32.const 12)) // iov.iov_len - The length of the 'hello world\n' string
-
-type Emitter struct {
-	TypesSection     *bytes.Buffer
-	ImportsSection   *bytes.Buffer
-	FuncsSection     *bytes.Buffer
-	ExportsSection   *bytes.Buffer
-	FuncsBodySection *bytes.Buffer
-	Tree             *ast.Ast
-	funcSymbolTable  map[string]FuncData
-}
-
-func NewEmitter(tree *ast.Ast) Emitter {
-	return Emitter{
-		TypesSection:     bytes.NewBuffer(nil),
-		ImportsSection:   bytes.NewBuffer(nil),
-		FuncsSection:     bytes.NewBuffer(nil),
-		ExportsSection:   bytes.NewBuffer(nil),
-		FuncsBodySection: bytes.NewBuffer(nil),
-		funcSymbolTable:  map[string]FuncData{},
-		Tree:             tree,
-	}
-}
-
-func (e Emitter) EmitTypes(fun FuncData) error {
-	e.TypesSection.WriteByte(0x60)                  // type func
-	e.TypesSection.WriteByte(byte(len(fun.Params))) // num params
-	for _, param := range fun.Params {              // i32, i32
-		t, ok := typeMap[param.Type]
-		if !ok {
-			return fmt.Errorf("func'" + fun.Name + "' parameter '" + param.Name + "' type '" + param.Type + "' does not exist")
-		}
-		e.TypesSection.WriteByte(t)
-	}
-	if fun.ReturnType != "" {
-		t, ok := typeMap[fun.ReturnType]
-		if !ok {
-			return fmt.Errorf("func'" + fun.Name + "' return type '" + fun.ReturnType + "' does not exist")
-		}
-		e.TypesSection.WriteByte(0x01) // num results
-		e.TypesSection.WriteByte(t)    // i32
-	} else {
-		e.TypesSection.WriteByte(0x00) // num results
-	}
-	// panic(repr.String(buffer.Bytes()))
-	return nil
-}
-
-func (e Emitter) EmitImports(moduleName, funcName string, typeIndex int) {
-	e.ImportsSection.WriteByte(byte(len(moduleName))) // module name length
-	e.ImportsSection.Write([]byte(moduleName))        // module name
-	e.ImportsSection.WriteByte(byte(len(funcName)))   // fn name length
-	e.ImportsSection.Write([]byte(funcName))          // fn name
-	e.ImportsSection.WriteByte(0x00)                  // import kind
-	e.ImportsSection.WriteByte(byte(typeIndex))       // import signature index
-}
-
-func (e Emitter) EmitFuncs(funcName string, typeIndex int) {
-	e.FuncsSection.WriteByte(byte(typeIndex))
-	e.ExportsSection.WriteByte(byte(len(funcName))) // name length
-	e.ExportsSection.Write([]byte(funcName))
-	e.ExportsSection.WriteByte(0x00)            // export kind
-	e.ExportsSection.WriteByte(byte(typeIndex)) // export funcindex
-}
-
-func (e Emitter) EmitExports(typeIndex int) {
-	e.FuncsSection.WriteByte(byte(typeIndex))
-}
-
 func (e Emitter) EmitAll() (*bytes.Buffer, error) {
 	buffer := bytes.NewBuffer(nil)
 	buffer.Write([]byte{0x00, 0x61, 0x73, 0x6d}) // WASM_BINARY_MAGIC
 	buffer.Write([]byte{0x01, 0x00, 0x00, 0x00}) // WASM_BINARY_VERSION
 
-	funcBodys := []byte{}
 	externFuncsCount := 0
 	funcsCount := 0
-	funcSymbolTable := map[string]FuncData{}
 	for _, p := range e.Tree.Modules {
 		for _, a := range p.ExternFuncs {
-			funcSymbolTable[a.Name] = FuncData{
+			e.funcs[a.Name] = FuncData{
 				Index:      externFuncsCount,
 				Name:       a.Name,
 				Params:     map[string]FuncParam{},
 				ReturnType: a.ReturnType,
 			}
 			for pi, param := range a.Parameters {
-				funcSymbolTable[a.Name].Params[param.Name] = FuncParam{
+				e.funcs[a.Name].Params[param.Name] = FuncParam{
 					Index: pi,
 					Name:  param.Name,
 					Type:  param.Type.Name,
 				}
 			}
-			err := e.EmitTypes(funcSymbolTable[a.Name])
+			err := e.EmitTypes(a.Name)
 			if err != nil {
 				return nil, fmt.Errorf("Failed to emitTypes %v", err)
 			}
@@ -282,50 +300,39 @@ func (e Emitter) EmitAll() (*bytes.Buffer, error) {
 			if len(fun.ReturnTypes) > 1 {
 				returnType = fun.ReturnTypes[0]
 			}
-			funcSymbolTable[fun.Name] = FuncData{
+			e.funcs[fun.Name] = FuncData{
 				Index:      externFuncsCount + funcsCount,
 				Name:       fun.Name,
 				Params:     map[string]FuncParam{},
 				ReturnType: returnType,
 			}
 			for pi, param := range fun.Parameters {
-				funcSymbolTable[fun.Name].Params[param.Name] = FuncParam{
+				e.funcs[fun.Name].Params[param.Name] = FuncParam{
 					Index: pi,
 					Name:  param.Name,
 					Type:  param.Type.Name,
 				}
 			}
-			err := e.EmitTypes(funcSymbolTable[fun.Name])
+			err := e.EmitTypes(fun.Name)
 			if err != nil {
 				return nil, fmt.Errorf("Failed to emitTypes %v", err)
 			}
 			e.EmitFuncs(fun.Name, externFuncsCount+funcsCount) // function 0 signature index
 
-			funcbody := bytes.NewBuffer([]byte{
-				0x00, // local decl count
-			})
-			for i, s := range fun.Body {
-				err := emitExpression(funcbody, fun.Name, funcSymbolTable, s.Exp.Operator, s.Exp.Left, s.Exp.Right)
-				if err != nil {
-					return nil, err
-				}
-				if i != len(fun.Body)-1 {
-					funcbody.WriteByte(op.DROP)
-				}
+			d, err := e.EmitFuncBody(fun.Name, fun.Body)
+			if err != nil {
+				return nil, fmt.Errorf("Failed to EmitFuncBody %v", err)
 			}
-			if funcSymbolTable[fun.Name].ReturnType == "" {
-				funcbody.WriteByte(op.DROP)
-			}
-			funcBodys = append(funcBodys, byte(len(funcbody.Bytes())+1)) // funcbody size
-			funcBodys = append(funcBodys, funcbody.Bytes()...)
-			funcBodys = append(funcBodys, op.FUNC_END)
+			e.FuncsBodySection.WriteByte(byte(len(d.Bytes()) + 1)) // funcbody size
+			e.FuncsBodySection.Write(d.Bytes())
+			e.FuncsBodySection.WriteByte(op.FUNC_END)
 			// if fnIndex == 1 {
 			// 	return nil, fmt.Errorf(fmt.Sprintf("%+v", funcbody.Bytes()))
 			// }
 			funcsCount += 1
 		}
 	}
-	repr.Println(funcSymbolTable)
+	repr.Println(e.funcs)
 	buffer.Write([]byte{0x01, byte(e.TypesSection.Len() + 1), byte(externFuncsCount + funcsCount)}) // Type section code, section size, num types, type data
 	buffer.Write(e.TypesSection.Bytes())
 	buffer.Write([]byte{0x02, byte(e.ImportsSection.Len() + 1), byte(externFuncsCount)}) // Imports section, section size, num imports, type data
@@ -335,7 +342,7 @@ func (e Emitter) EmitAll() (*bytes.Buffer, error) {
 	buffer.Write([]byte{0x05, 0x03, 0x01, 0x00, 0x01})                             // Memory section code, section size, num memories, flags, initial (1 page 64KB)
 	buffer.Write([]byte{0x07, byte(e.ExportsSection.Len() + 1), byte(funcsCount)}) // exports section code, section size, num exports
 	buffer.Write(e.ExportsSection.Bytes())
-	buffer.Write([]byte{0x0a, byte(len(funcBodys) + 1), byte(funcsCount)}) // funcbody section code, section size, num functions
-	buffer.Write(funcBodys)
+	buffer.Write([]byte{0x0a, byte(e.FuncsBodySection.Len() + 1), byte(funcsCount)}) // funcbody section code, section size, num functions
+	buffer.Write(e.FuncsBodySection.Bytes())
 	return buffer, nil
 }
