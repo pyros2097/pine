@@ -6,4 +6,11 @@ add = a: num, b: num -> num
   a + b + 4
 
 _start = ->
-  fd_write(1, "hello world", 1, 12)
+  add(1, 2)
+  add(1, 2)
+  add(1, 2)
+  add(1, 2)
+  add(1, 2)
+  add(1, 2)
+  add(1, 2)
+// fd_write(1, "hello world", 1, 12)

@@ -2,7 +2,6 @@ package op
 
 const I32 = 0x7f
 const F64 = 0x7c
-const DECLARE_CONST = 0x41 // delcare const
 const F64_ADD = 0xa0
 const F64_SUB = 0xa1
 const F64_MUL = 0xa2

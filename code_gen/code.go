@@ -18,7 +18,7 @@ var typeMap = map[string]byte{
 type FuncData struct {
 	Index      int
 	Name       string
-	Params     map[string]FuncParam
+	Params     map[string]*FuncParam
 	ReturnType string
 }
 
@@ -26,6 +26,7 @@ type FuncParam struct {
 	Index int
 	Name  string
 	Type  string
+	ptr   int
 }
 
 type Emitter struct {
@@ -35,9 +36,10 @@ type Emitter struct {
 	ExportsSection   *bytes.Buffer
 	FuncsBodySection *bytes.Buffer
 	Tree             *ast.Ast
-	funcs            map[string]FuncData
+	funcs            map[string]*FuncData
 	externFuncsCount int
 	funcsCount       int
+	startAddress     int
 }
 
 func NewEmitter(tree *ast.Ast) Emitter {
@@ -47,8 +49,11 @@ func NewEmitter(tree *ast.Ast) Emitter {
 		FuncsSection:     bytes.NewBuffer(nil),
 		ExportsSection:   bytes.NewBuffer(nil),
 		FuncsBodySection: bytes.NewBuffer(nil),
-		funcs:            map[string]FuncData{},
+		funcs:            map[string]*FuncData{},
 		Tree:             tree,
+		externFuncsCount: 0,
+		funcsCount:       0,
+		startAddress:     0,
 	}
 }
 
@@ -157,18 +162,17 @@ func (e Emitter) emitExpression(buffer *bytes.Buffer, funcName string, operation
 			if len(callFunc.Params) != len(r.Left.Params) {
 				return fmt.Errorf("func '%s' trying to call function '%s' with extra parameters", funcName, callFunc.Name)
 			}
-			for _, v := range r.Left.Params {
-				if v.Str != nil {
-					emitString(buffer, *v.Str)
+			for i, v := range r.Left.Params {
+				for _, p := range callFunc.Params {
+					if i == p.Index {
+						if v.Str != nil {
+							p.ptr = e.emitString(buffer, *v.Str)
+						}
+						break
+					}
 				}
 			}
-			for _, v := range r.Left.Params {
-				if v.Num != nil {
-					buffer.WriteByte(0x41)
-					// TODO: fix this
-					// this has to be float64 or int32
-					buffer.WriteByte(byte(int32(*v.Num)))
-				}
+			for i, v := range r.Left.Params {
 				if v.Reference != nil {
 					vref, ok := e.funcs[funcName].Params[*v.Reference]
 					if !ok {
@@ -177,9 +181,24 @@ func (e Emitter) emitExpression(buffer *bytes.Buffer, funcName string, operation
 					buffer.WriteByte(op.GET_LOCAL)
 					buffer.WriteByte(byte(vref.Index))
 				}
-				if v.Str != nil {
-					buffer.WriteByte(op.I32_CONST)
-					buffer.WriteByte(byte(0))
+				for _, p := range callFunc.Params {
+					if i == p.Index {
+						if v.Num != nil {
+							// specific case for i32 which is used for external funcs which have i32 as parameters
+							if p.Type == "i32" {
+								buffer.WriteByte(op.I32_CONST)
+								buffer.WriteByte(byte(int32(*v.Num)))
+							} else {
+								buffer.WriteByte(op.F64_CONST)
+								buffer.Write(float64ToByte(*v.Num))
+							}
+						}
+						if v.Str != nil {
+							buffer.WriteByte(op.I32_CONST)
+							buffer.WriteByte(byte(p.ptr))
+						}
+						break
+					}
 				}
 			}
 			buffer.WriteByte(op.CALL)
@@ -238,7 +257,7 @@ func (e Emitter) emitOperation(buffer *bytes.Buffer, funcName, operation string)
 	return nil
 }
 
-func emitStore(b *bytes.Buffer, address byte, v int32) {
+func (e Emitter) emitStore(b *bytes.Buffer, address byte, v int32) {
 	b.WriteByte(op.I32_CONST)
 	b.WriteByte(address)
 	b.WriteByte(op.I32_CONST)
@@ -248,7 +267,7 @@ func emitStore(b *bytes.Buffer, address byte, v int32) {
 	b.WriteByte(byte(0x00))
 }
 
-func emitString(b *bytes.Buffer, str string) {
+func (e Emitter) emitString(b *bytes.Buffer, str string) int {
 	data := []byte(str)
 	if len(data)%4 == 1 {
 		data = append(data, 0)
@@ -265,19 +284,21 @@ func emitString(b *bytes.Buffer, str string) {
 	// (i32.store (i32.const 8) (i32.const 0x6c6c6568))
 	// (i32.store (i32.const 12) (i32.const 0x6f77206f))
 	// (i32.store (i32.const 16) (i32.const 0x0a646c72))
-	emitStore(b, 0, 8)
-	emitStore(b, 4, int32(len(string(data))))
-	startAddress := 0
+	ptr := e.startAddress
+	e.emitStore(b, byte(e.startAddress), 8)
+	e.startAddress += 4
+	e.emitStore(b, byte(e.startAddress), int32(len(string(data))))
 	startData := 0
 	for i := range data {
 		index := i + 1
 		if index%4 == 0 {
-			startAddress = index + 4
+			e.startAddress += 4
 			startData = index - 4
 			remainingData := data[startData:index]
-			emitStore(b, byte(startAddress), int32(binary.LittleEndian.Uint32(remainingData)))
+			e.emitStore(b, byte(e.startAddress), int32(binary.LittleEndian.Uint32(remainingData)))
 		}
 	}
+	return ptr
 }
 
 func (e Emitter) EmitAll() (*bytes.Buffer, error) {
@@ -287,14 +308,14 @@ func (e Emitter) EmitAll() (*bytes.Buffer, error) {
 
 	for _, p := range e.Tree.Modules {
 		for _, a := range p.ExternFuncs {
-			e.funcs[a.Name] = FuncData{
+			e.funcs[a.Name] = &FuncData{
 				Index:      e.externFuncsCount,
 				Name:       a.Name,
-				Params:     map[string]FuncParam{},
+				Params:     map[string]*FuncParam{},
 				ReturnType: a.ReturnType,
 			}
 			for pi, param := range a.Parameters {
-				e.funcs[a.Name].Params[param.Name] = FuncParam{
+				e.funcs[a.Name].Params[param.Name] = &FuncParam{
 					Index: pi,
 					Name:  param.Name,
 					Type:  param.Type.Name,
@@ -312,14 +333,14 @@ func (e Emitter) EmitAll() (*bytes.Buffer, error) {
 			if len(fun.ReturnTypes) > 1 {
 				returnType = fun.ReturnTypes[0]
 			}
-			e.funcs[fun.Name] = FuncData{
+			e.funcs[fun.Name] = &FuncData{
 				Index:      e.externFuncsCount + e.funcsCount,
 				Name:       fun.Name,
-				Params:     map[string]FuncParam{},
+				Params:     map[string]*FuncParam{},
 				ReturnType: returnType,
 			}
 			for pi, param := range fun.Parameters {
-				e.funcs[fun.Name].Params[param.Name] = FuncParam{
+				e.funcs[fun.Name].Params[param.Name] = &FuncParam{
 					Index: pi,
 					Name:  param.Name,
 					Type:  param.Type.Name,

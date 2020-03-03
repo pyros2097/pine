@@ -18,6 +18,12 @@
         (i32.store (i32.const 12) (i32.const 0x6f77206f))
         (i32.store (i32.const 16) (i32.const 0x0a646c72))
 
+        (f64.add 
+            (f64.const 0.0)
+             (f64.const 1.0)
+        )
+        drop
+
         (call $fd_write
             (i32.const 1) ;; file_descriptor - 1 for stdout
             (i32.const 0) ;; *iovs - The pointer to the iov array, which is stored at memory location 0
