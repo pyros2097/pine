@@ -10,16 +10,6 @@ import (
 	"github.com/alecthomas/repr"
 )
 
-func emitString(b *bytes.Buffer, address byte, v int32) {
-	b.WriteByte(op.I32_CONST)
-	b.WriteByte(address)
-	b.WriteByte(op.I32_CONST)
-	encodeSleb128(b, v)
-	b.WriteByte(op.I32_STORE)
-	b.WriteByte(byte(0x02))
-	b.WriteByte(byte(0x00))
-}
-
 var typeMap = map[string]byte{
 	"num": op.F64,
 	"i32": op.I32,
@@ -37,28 +27,6 @@ type FuncParam struct {
 	Name  string
 	Type  string
 }
-
-func emitOperation(buffer *bytes.Buffer, funcName, operation string) error {
-	switch operation {
-	case "+":
-		buffer.WriteByte(op.F64_ADD)
-	case "-":
-		buffer.WriteByte(op.F64_SUB)
-	case "*":
-		buffer.WriteByte(op.F64_MUL)
-	case "/":
-		buffer.WriteByte(op.F64_DIV)
-	default:
-		return fmt.Errorf("func '%s' operation '%s' is invalid", funcName, operation)
-	}
-	return nil
-}
-
-// _pointer = a: string -> i32
-// (i32.store (i32.const 0) (i32.const 8)) // iov.iov_base - This is a pointer to the start of the 'hello world\n' string
-
-// _length = a: string -> i32
-// (i32.store (i32.const 4) (i32.const 12)) // iov.iov_len - The length of the 'hello world\n' string
 
 type Emitter struct {
 	TypesSection     *bytes.Buffer
@@ -170,7 +138,7 @@ func (e Emitter) emitExpression(buffer *bytes.Buffer, funcName string, operation
 	if r != nil && r.Left != nil && r.Left.Num != nil {
 		buffer.WriteByte(op.F64_CONST)
 		buffer.Write(float64ToByte(*r.Left.Num))
-		emitOperation(buffer, funcName, *operation)
+		e.emitOperation(buffer, funcName, *operation)
 	}
 	if l != nil && l.Reference != nil {
 		if operation != nil {
@@ -191,36 +159,7 @@ func (e Emitter) emitExpression(buffer *bytes.Buffer, funcName string, operation
 			}
 			for _, v := range r.Left.Params {
 				if v.Str != nil {
-					str := *v.Str
-					data := []byte(str)
-					if len(data)%4 == 1 {
-						data = append(data, 0)
-					}
-					if len(data)%4 == 2 {
-						data = append(data, 0)
-					}
-					if len(data)%4 == 3 {
-						data = append(data, '\n')
-					}
-
-					// (i32.store (i32.const 0) (i32.const 8))  ;; iov.iov_base - This is a pointer to the start of the 'hello world\n' string
-					// (i32.store (i32.const 4) (i32.const 12))  ;; iov.iov_len - The length of the 'hello world\n' string
-					// (i32.store (i32.const 8) (i32.const 0x6c6c6568))
-					// (i32.store (i32.const 12) (i32.const 0x6f77206f))
-					// (i32.store (i32.const 16) (i32.const 0x0a646c72))
-					emitString(buffer, 0, 8)
-					emitString(buffer, 4, int32(len(string(data))))
-					startAddress := 0
-					startData := 0
-					for i := range data {
-						index := i + 1
-						if index%4 == 0 {
-							startAddress = index + 4
-							startData = index - 4
-							remainingData := data[startData:index]
-							emitString(buffer, byte(startAddress), int32(binary.LittleEndian.Uint32(remainingData)))
-						}
-					}
+					e.emitString(buffer, *v.Str)
 				}
 			}
 			for _, v := range r.Left.Params {
@@ -260,7 +199,7 @@ func (e Emitter) emitExpression(buffer *bytes.Buffer, funcName string, operation
 		}
 		buffer.WriteByte(op.GET_LOCAL)
 		buffer.WriteByte(byte(ref.Index))
-		emitOperation(buffer, funcName, *operation)
+		e.emitOperation(buffer, funcName, *operation)
 	}
 	if r != nil && r.Operator != nil {
 		err := e.emitExpression(buffer, funcName, r.Operator, nil, r.Right)
@@ -269,6 +208,64 @@ func (e Emitter) emitExpression(buffer *bytes.Buffer, funcName string, operation
 		}
 	}
 	return nil
+}
+
+func (e Emitter) emitOperation(buffer *bytes.Buffer, funcName, operation string) error {
+	switch operation {
+	case "+":
+		buffer.WriteByte(op.F64_ADD)
+	case "-":
+		buffer.WriteByte(op.F64_SUB)
+	case "*":
+		buffer.WriteByte(op.F64_MUL)
+	case "/":
+		buffer.WriteByte(op.F64_DIV)
+	default:
+		return fmt.Errorf("func '%s' operation '%s' is invalid", funcName, operation)
+	}
+	return nil
+}
+
+func (e Emitter) emitStore(b *bytes.Buffer, address byte, v int32) {
+	b.WriteByte(op.I32_CONST)
+	b.WriteByte(address)
+	b.WriteByte(op.I32_CONST)
+	encodeSleb128(b, v)
+	b.WriteByte(op.I32_STORE)
+	b.WriteByte(byte(0x02))
+	b.WriteByte(byte(0x00))
+}
+
+func (e Emitter) emitString(b *bytes.Buffer, str string) {
+	data := []byte(str)
+	if len(data)%4 == 1 {
+		data = append(data, 0)
+	}
+	if len(data)%4 == 2 {
+		data = append(data, 0)
+	}
+	if len(data)%4 == 3 {
+		data = append(data, '\n')
+	}
+
+	// (i32.store (i32.const 0) (i32.const 8))  ;; iov.iov_base - This is a pointer to the start of the 'hello world\n' string
+	// (i32.store (i32.const 4) (i32.const 12))  ;; iov.iov_len - The length of the 'hello world\n' string
+	// (i32.store (i32.const 8) (i32.const 0x6c6c6568))
+	// (i32.store (i32.const 12) (i32.const 0x6f77206f))
+	// (i32.store (i32.const 16) (i32.const 0x0a646c72))
+	e.emitStore(b, 0, 8)
+	e.emitStore(b, 4, int32(len(string(data))))
+	startAddress := 0
+	startData := 0
+	for i := range data {
+		index := i + 1
+		if index%4 == 0 {
+			startAddress = index + 4
+			startData = index - 4
+			remainingData := data[startData:index]
+			e.emitStore(b, byte(startAddress), int32(binary.LittleEndian.Uint32(remainingData)))
+		}
+	}
 }
 
 func (e Emitter) EmitAll() (*bytes.Buffer, error) {
