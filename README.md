@@ -1,5 +1,7 @@
 # The Yum Programming Language
 
+# First class dependent types
+
 ## Example
 
 ```js

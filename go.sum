@@ -1,3 +1,5 @@
+ekyu.moe/leb128 v0.0.0-20190626180622-d3722dc409a8 h1:zWcNapXDoFEobgJquW8jOgnVClkRLV9StPmi+LhtTGQ=
+ekyu.moe/leb128 v0.0.0-20190626180622-d3722dc409a8/go.mod h1:hphPjsG3qJdFKRttMyBWptntD0vAUE3NUenOGL0914A=
 github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/alecthomas/assert v0.0.0-20170929043011-405dbfeb8e38 h1:smF2tmSOzy2Mm+0dGI2AIUHY+w0BUc+4tn40djz7+6U=
@@ -18,6 +20,8 @@ github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d/go.mod h1:ma
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/drom/LEB128 v0.0.0-20170517063658-5138cab8212b h1:wpEjIWPGhgV4xzhkSfdzB3+fjr7WSSwzN0tXu77qZbM=
+github.com/drom/LEB128 v0.0.0-20170517063658-5138cab8212b/go.mod h1:oG4lv+VsuK5L9txDcvkfIHAwiIfSxX+PkMqYiq5dTv4=
 github.com/edsrzf/mmap-go v1.0.0/go.mod h1:YO35OhQPt3KJa3ryjFM5Bs14WD66h8eGKpfaBNrHW5M=
 github.com/fsnotify/fsnotify v1.4.7 h1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV9I=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=

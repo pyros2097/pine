@@ -2,19 +2,8 @@ module main
 
 import "github.com/yum/wasi_unstable"
 
-class String
-
-  ptr: -> i32
-    __compiler__gen__
-
-  length: -> i32
-    __compiler__gen__
-
-
 add = a: num, b: num -> num
   a + b + 4
 
-main = ->
-  1 + 1
-  add(1, 2)
-  // fd_write(0, 1, 2, 3)
+_start = ->
+  fd_write(1, "hello world", 1, 12)

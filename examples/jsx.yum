@@ -8,3 +8,30 @@ HomeScreen a b c =
     <div>
     </div>
   </Window>
+
+factorial : Int -> Int
+factorial 0 = 1
+factorial n = n * factorial (n - 1)
+
+int factorial(int n) {
+   if(n == 0) {
+      return 1;
+   } else {
+      return n * factorial(n-1);
+   }
+}
+
+fibbonacci : Int -> Int
+fibbonacci 0 = 0
+fibbonacci 1 = 1
+fibbonacci n = factorial (n - 1) + factorial (n - 2)
+
+int fibbonacci(int n) {
+   if(n == 0){
+      return 0;
+   } else if(n == 1) {
+      return 1;
+   } else {
+      return (fibbonacci(n-1) + fibbonacci(n-2));
+   }
+}

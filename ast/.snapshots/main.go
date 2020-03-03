@@ -61,56 +61,25 @@
           End: &"\n",
         },
       },
-      Classes: []*ast.Class{
-        &ast.Class{
-          Pos: Position{Filename: "", Offset: 51, Line: 4, Column: 1},
-          Start: "\n",
-          Name: "String",
-          Next: &"\n",
-          CompilerFuncs: []*ast.CompilerFunc{
-            &ast.CompilerFunc{
-              Pos: Position{Filename: "", Offset: 65, Line: 6, Column: 1},
-              Start: "\n",
-              Name: "ptr",
-              ReturnTypes: []string{
-                "i32",
-                "\n",
-              },
-              End: &"\n",
-            },
-            &ast.CompilerFunc{
-              Pos: Position{Filename: "", Offset: 102, Line: 9, Column: 1},
-              Start: "\n",
-              Name: "length",
-              ReturnTypes: []string{
-                "i32",
-                "\n",
-              },
-              End: &"\n",
-            },
-          },
-          End: &"\n",
-        },
-      },
       Funs: []*ast.FunDecl{
         &ast.FunDecl{
-          Pos: Position{Filename: "", Offset: 143, Line: 13, Column: 1},
+          Pos: Position{Filename: "", Offset: 51, Line: 4, Column: 1},
           Start: "\n",
           Name: "add",
           Parameters: []*ast.FuncParameter{
             &ast.FuncParameter{
-              Pos: Position{Filename: "", Offset: 150, Line: 14, Column: 7},
+              Pos: Position{Filename: "", Offset: 58, Line: 5, Column: 7},
               Name: "a",
               Type: &ast.Type{
-                Pos: Position{Filename: "", Offset: 151, Line: 14, Column: 8},
+                Pos: Position{Filename: "", Offset: 59, Line: 5, Column: 8},
                 Name: "num",
               },
             },
             &ast.FuncParameter{
-              Pos: Position{Filename: "", Offset: 158, Line: 14, Column: 15},
+              Pos: Position{Filename: "", Offset: 66, Line: 5, Column: 15},
               Name: "b",
               Type: &ast.Type{
-                Pos: Position{Filename: "", Offset: 159, Line: 14, Column: 16},
+                Pos: Position{Filename: "", Offset: 67, Line: 5, Column: 16},
                 Name: "num",
               },
             },
@@ -123,19 +92,19 @@
             &ast.Block{
               Exp: &ast.Expression{
                 Left: &ast.Literal{
-                  Pos: Position{Filename: "", Offset: 174, Line: 15, Column: 3},
+                  Pos: Position{Filename: "", Offset: 82, Line: 6, Column: 3},
                   Reference: &"a",
                 },
                 Operator: &"+",
                 Right: &ast.Expression{
                   Left: &ast.Literal{
-                    Pos: Position{Filename: "", Offset: 178, Line: 15, Column: 7},
+                    Pos: Position{Filename: "", Offset: 86, Line: 6, Column: 7},
                     Reference: &"b",
                   },
                   Operator: &"+",
                   Right: &ast.Expression{
                     Left: &ast.Literal{
-                      Pos: Position{Filename: "", Offset: 182, Line: 15, Column: 11},
+                      Pos: Position{Filename: "", Offset: 90, Line: 6, Column: 11},
                       Num: &4,
                     },
                   },
@@ -146,7 +115,7 @@
           },
         },
         &ast.FunDecl{
-          Pos: Position{Filename: "", Offset: 184, Line: 16, Column: 1},
+          Pos: Position{Filename: "", Offset: 92, Line: 7, Column: 1},
           Start: "\n",
           Name: "_start",
           ReturnTypes: []string{
@@ -156,36 +125,28 @@
             &ast.Block{
               Exp: &ast.Expression{
                 Left: &ast.Literal{
-                  Pos: Position{Filename: "", Offset: 199, Line: 18, Column: 3},
-                  Num: &1,
-                },
-                Operator: &"+",
-                Right: &ast.Expression{
-                  Left: &ast.Literal{
-                    Pos: Position{Filename: "", Offset: 203, Line: 18, Column: 7},
-                    Num: &1,
-                  },
-                },
-              },
-              End: &"\n",
-            },
-            &ast.Block{
-              Exp: &ast.Expression{
-                Left: &ast.Literal{
-                  Pos: Position{Filename: "", Offset: 207, Line: 19, Column: 3},
-                  Reference: &"add",
+                  Pos: Position{Filename: "", Offset: 107, Line: 9, Column: 3},
+                  Reference: &"fd_write",
                 },
                 Right: &ast.Expression{
                   Left: &ast.Literal{
-                    Pos: Position{Filename: "", Offset: 210, Line: 19, Column: 6},
+                    Pos: Position{Filename: "", Offset: 115, Line: 9, Column: 11},
                     Params: []*ast.Literal{
                       &ast.Literal{
-                        Pos: Position{Filename: "", Offset: 211, Line: 19, Column: 7},
+                        Pos: Position{Filename: "", Offset: 116, Line: 9, Column: 12},
                         Num: &1,
                       },
                       &ast.Literal{
-                        Pos: Position{Filename: "", Offset: 214, Line: 19, Column: 10},
-                        Num: &2,
+                        Pos: Position{Filename: "", Offset: 119, Line: 9, Column: 15},
+                        Str: &"hello world",
+                      },
+                      &ast.Literal{
+                        Pos: Position{Filename: "", Offset: 134, Line: 9, Column: 30},
+                        Num: &1,
+                      },
+                      &ast.Literal{
+                        Pos: Position{Filename: "", Offset: 137, Line: 9, Column: 33},
+                        Num: &12,
                       },
                     },
                   },

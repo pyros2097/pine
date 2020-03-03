@@ -3,11 +3,13 @@ module yum
 go 1.12
 
 require (
+	ekyu.moe/leb128 v0.0.0-20190626180622-d3722dc409a8
 	github.com/alecthomas/assert v0.0.0-20170929043011-405dbfeb8e38
 	github.com/alecthomas/colour v0.1.0 // indirect
 	github.com/alecthomas/kong v0.2.1
 	github.com/alecthomas/participle v0.4.1
 	github.com/alecthomas/repr v0.0.0-20181024024818-d37bc2a10ba1
+	github.com/drom/LEB128 v0.0.0-20170517063658-5138cab8212b // indirect
 	github.com/hedzr/cmdr v1.6.20
 	github.com/mattn/go-isatty v0.0.11 // indirect
 	github.com/perlin-network/life v0.0.0-20191203030451-05c0e0f7eaea

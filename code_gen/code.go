@@ -9,6 +9,31 @@ import (
 	"github.com/alecthomas/repr"
 )
 
+func EncodeSleb128(b *bytes.Buffer, v int32) {
+	for {
+		c := uint8(v & 0x7f)
+		s := uint8(v & 0x40)
+		v >>= 7
+		if (v != -1 || s == 0) && (v != 0 || s != 0) {
+			c |= 0x80
+		}
+		b.WriteByte(c)
+		if c&0x80 == 0 {
+			break
+		}
+	}
+}
+
+func writeMemoryData(b *bytes.Buffer, address byte, v int32) {
+	b.WriteByte(operandMap["i32.const"])
+	b.WriteByte(address)
+	b.WriteByte(operandMap["i32.const"])
+	EncodeSleb128(b, v)
+	b.WriteByte(operandMap["i32.store"])
+	b.WriteByte(byte(0x02))
+	b.WriteByte(byte(0x00))
+}
+
 var typeMap = map[string]byte{
 	"num": 0x7c,
 	"i32": 0x7f,
@@ -35,7 +60,9 @@ var operandMap = map[string]byte{
 	"gt":            0x64,
 	"le":            0x65,
 	"ge":            0x66,
+	"i32.load":      0x28,
 	"f64.load":      0x2b,
+	"i32.store":     0x36,
 	"f64.store":     0x39,
 	"memory.grow":   0x40,
 	"nop":           0x01,
@@ -80,16 +107,22 @@ func float64ToByte(f float64) []byte {
 	return buf.Bytes()
 }
 
-// func emitString(f)
-
 func emitExpression(buffer *bytes.Buffer, funcName string, funcSymbolTable map[string]FuncData, operation *string, l *ast.Literal, r *ast.Expression) error {
 	if l != nil && l.Num != nil {
 		buffer.WriteByte(operandMap["f64.const"])
 		buffer.Write(float64ToByte(*l.Num))
 	}
 	if l != nil && l.Str != nil {
+		// (i32.store (i32.const 0) (i32.const 8))  ;; iov.iov_base - This is a pointer to the start of the 'hello world\n' string
+		// (i32.store (i32.const 4) (i32.const 12))  ;; iov.iov_len - The length of the 'hello world\n' string
+		// (i32.store (i32.const 8) (i32.const 0x6c6c6568))
+		// (i32.store (i32.const 12) (i32.const 0x6f77206f))
+		// (i32.store (i32.const 16) (i32.const 0x0a646c72))
+		// buffer.WriteByte(operandMap["i32.const"])
+		// buffer.WriteByte(byte(0))
 	}
-	if r.Left != nil && r.Left.Num != nil {
+	// TODO: remove r
+	if r != nil && r.Left != nil && r.Left.Num != nil {
 		buffer.WriteByte(operandMap["f64.const"])
 		buffer.Write(float64ToByte(*r.Left.Num))
 		buffer.WriteByte(operandMap[*operation])
@@ -112,9 +145,45 @@ func emitExpression(buffer *bytes.Buffer, funcName string, funcSymbolTable map[s
 				return fmt.Errorf("func'" + funcName + "' trying to call function '" + callFunc.Name + "' with extra parameters")
 			}
 			for _, v := range r.Left.Params {
+				if v.Str != nil {
+					str := *v.Str
+					data := []byte(str)
+					if len(data)%4 == 1 {
+						data = append(data, 0)
+					}
+					if len(data)%4 == 2 {
+						data = append(data, 0)
+					}
+					if len(data)%4 == 3 {
+						data = append(data, '\n')
+					}
+
+					// (i32.store (i32.const 0) (i32.const 8))  ;; iov.iov_base - This is a pointer to the start of the 'hello world\n' string
+					// (i32.store (i32.const 4) (i32.const 12))  ;; iov.iov_len - The length of the 'hello world\n' string
+					// (i32.store (i32.const 8) (i32.const 0x6c6c6568))
+					// (i32.store (i32.const 12) (i32.const 0x6f77206f))
+					// (i32.store (i32.const 16) (i32.const 0x0a646c72))
+					writeMemoryData(buffer, 0, 8)
+					writeMemoryData(buffer, 4, int32(len(string(data))))
+					startAddress := 0
+					startData := 0
+					for i := range data {
+						index := i + 1
+						if index%4 == 0 {
+							startAddress = index + 4
+							startData = index - 4
+							remainingData := data[startData:index]
+							writeMemoryData(buffer, byte(startAddress), int32(binary.LittleEndian.Uint32(remainingData)))
+						}
+					}
+				}
+			}
+			for _, v := range r.Left.Params {
 				if v.Num != nil {
-					buffer.WriteByte(operandMap["f64.const"])
-					buffer.Write(float64ToByte(*v.Num))
+					buffer.WriteByte(0x41)
+					// TODO: fix this
+					// this has to be float64 or int32
+					buffer.WriteByte(byte(int32(*v.Num)))
 				}
 				if v.Reference != nil {
 					vref, ok := funcSymbolTable[funcName].Params[*v.Reference]
@@ -123,6 +192,10 @@ func emitExpression(buffer *bytes.Buffer, funcName string, funcSymbolTable map[s
 					}
 					buffer.WriteByte(operandMap["get_local"])
 					buffer.WriteByte(byte(vref.Index))
+				}
+				if v.Str != nil {
+					buffer.WriteByte(operandMap["i32.const"])
+					buffer.WriteByte(byte(0))
 				}
 			}
 			buffer.WriteByte(operandMap["call"])
@@ -136,7 +209,7 @@ func emitExpression(buffer *bytes.Buffer, funcName string, funcSymbolTable map[s
 			}
 		}
 	}
-	if r.Left != nil && r.Left.Reference != nil {
+	if r != nil && r.Left != nil && r.Left.Reference != nil {
 		ref, ok := funcSymbolTable[funcName].Params[*r.Left.Reference]
 		if !ok {
 			return fmt.Errorf("func'" + funcName + "' parameter '" + *r.Left.Reference + "' does not exist")
@@ -145,7 +218,7 @@ func emitExpression(buffer *bytes.Buffer, funcName string, funcSymbolTable map[s
 		buffer.WriteByte(byte(ref.Index))
 		buffer.WriteByte(operandMap[*operation])
 	}
-	if r.Operator != nil {
+	if r != nil && r.Operator != nil {
 		err := emitExpression(buffer, funcName, funcSymbolTable, r.Operator, nil, r.Right)
 		if err != nil {
 			return err
