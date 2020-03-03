@@ -51,3 +51,9 @@ func TestCode(t *testing.T) {
 		})
 	}
 }
+
+func TestEmitStore(t *testing.T) {
+}
+
+func TestEmitString(t *testing.T) {
+}

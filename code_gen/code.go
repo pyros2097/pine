@@ -159,7 +159,7 @@ func (e Emitter) emitExpression(buffer *bytes.Buffer, funcName string, operation
 			}
 			for _, v := range r.Left.Params {
 				if v.Str != nil {
-					e.emitString(buffer, *v.Str)
+					emitString(buffer, *v.Str)
 				}
 			}
 			for _, v := range r.Left.Params {
@@ -210,6 +210,18 @@ func (e Emitter) emitExpression(buffer *bytes.Buffer, funcName string, operation
 	return nil
 }
 
+// class String
+//   ptr: i32
+//   length: i32
+
+//   init = ->
+
+//   ptr = a: string -> i32
+//     (i32.store (i32.const 0) (i32.const 8)) // iov.iov_base - This is a pointer to the start of the 'hello world\n' string
+
+//   _length = a: string -> i32
+//     (i32.store (i32.const 4) (i32.const 12)) // iov.iov_len - The length of the 'hello world\n' string
+
 func (e Emitter) emitOperation(buffer *bytes.Buffer, funcName, operation string) error {
 	switch operation {
 	case "+":
@@ -226,7 +238,7 @@ func (e Emitter) emitOperation(buffer *bytes.Buffer, funcName, operation string)
 	return nil
 }
 
-func (e Emitter) emitStore(b *bytes.Buffer, address byte, v int32) {
+func emitStore(b *bytes.Buffer, address byte, v int32) {
 	b.WriteByte(op.I32_CONST)
 	b.WriteByte(address)
 	b.WriteByte(op.I32_CONST)
@@ -236,7 +248,7 @@ func (e Emitter) emitStore(b *bytes.Buffer, address byte, v int32) {
 	b.WriteByte(byte(0x00))
 }
 
-func (e Emitter) emitString(b *bytes.Buffer, str string) {
+func emitString(b *bytes.Buffer, str string) {
 	data := []byte(str)
 	if len(data)%4 == 1 {
 		data = append(data, 0)
@@ -253,8 +265,8 @@ func (e Emitter) emitString(b *bytes.Buffer, str string) {
 	// (i32.store (i32.const 8) (i32.const 0x6c6c6568))
 	// (i32.store (i32.const 12) (i32.const 0x6f77206f))
 	// (i32.store (i32.const 16) (i32.const 0x0a646c72))
-	e.emitStore(b, 0, 8)
-	e.emitStore(b, 4, int32(len(string(data))))
+	emitStore(b, 0, 8)
+	emitStore(b, 4, int32(len(string(data))))
 	startAddress := 0
 	startData := 0
 	for i := range data {
@@ -263,7 +275,7 @@ func (e Emitter) emitString(b *bytes.Buffer, str string) {
 			startAddress = index + 4
 			startData = index - 4
 			remainingData := data[startData:index]
-			e.emitStore(b, byte(startAddress), int32(binary.LittleEndian.Uint32(remainingData)))
+			emitStore(b, byte(startAddress), int32(binary.LittleEndian.Uint32(remainingData)))
 		}
 	}
 }
