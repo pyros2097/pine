@@ -234,12 +234,14 @@ func (e Emitter) EmitImports(moduleName, funcName string, typeIndex int) {
 	e.ImportsSection.WriteByte(byte(typeIndex))       // import signature index
 }
 
+func (e Emitter) EmitFuncs(moduleName, funcName string, typeIndex int) {
+}
+
 func (e Emitter) EmitAll() (*bytes.Buffer, error) {
 	buffer := bytes.NewBuffer(nil)
 	buffer.Write([]byte{0x00, 0x61, 0x73, 0x6d}) // WASM_BINARY_MAGIC
 	buffer.Write([]byte{0x01, 0x00, 0x00, 0x00}) // WASM_BINARY_VERSION
 
-	funcs := []byte{}
 	exports := []byte{}
 	funcBodys := []byte{}
 	externFuncsCount := 0
@@ -289,7 +291,7 @@ func (e Emitter) EmitAll() (*bytes.Buffer, error) {
 			if err != nil {
 				return nil, fmt.Errorf("Failed to emitTypes %v", err)
 			}
-			funcs = append(funcs, byte(externFuncsCount+funcsCount))           // function 0 signature index
+			e.FuncsSection.WriteByte(byte(externFuncsCount + funcsCount))      // function 0 signature index
 			exports = append(exports, byte(len(fun.Name)))                     // name length
 			exports = append(exports, []byte(fun.Name)...)                     // name
 			exports = append(exports, 0x00, byte(externFuncsCount+funcsCount)) // export kind, export funcindex
@@ -323,8 +325,8 @@ func (e Emitter) EmitAll() (*bytes.Buffer, error) {
 	buffer.Write(e.TypesSection.Bytes())
 	buffer.Write([]byte{0x02, byte(e.ImportsSection.Len() + 1), byte(externFuncsCount)}) // Imports section, section size, num imports, type data
 	buffer.Write(e.ImportsSection.Bytes())
-	buffer.Write([]byte{0x03, byte(len(funcs) + 1), byte(funcsCount)}) // Func Sig section code, section size, num types, type data
-	buffer.Write(funcs)
+	buffer.Write([]byte{0x03, byte(e.FuncsSection.Len() + 1), byte(funcsCount)}) // Func Sig section code, section size, num types, type data
+	buffer.Write(e.FuncsSection.Bytes())
 	buffer.Write([]byte{0x05, 0x03, 0x01, 0x00, 0x01})                   // Memory section code, section size, num memories, flags, initial (1 page 64KB)
 	buffer.Write([]byte{0x07, byte(len(exports) + 1), byte(funcsCount)}) // exports section code, section size, num exports
 	buffer.Write(exports)
