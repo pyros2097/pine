@@ -225,12 +225,20 @@ func (e Emitter) EmitTypes(fun FuncData) error {
 	return nil
 }
 
+func (e Emitter) EmitImports(moduleName, funcName string, typeIndex int) {
+	e.ImportsSection.WriteByte(byte(len(moduleName))) // module name length
+	e.ImportsSection.Write([]byte(moduleName))        // module name
+	e.ImportsSection.WriteByte(byte(len(funcName)))   // fn name length
+	e.ImportsSection.Write([]byte(funcName))          // fn name
+	e.ImportsSection.WriteByte(0x00)                  // import kind
+	e.ImportsSection.WriteByte(byte(typeIndex))       // import signature index
+}
+
 func (e Emitter) EmitAll() (*bytes.Buffer, error) {
 	buffer := bytes.NewBuffer(nil)
 	buffer.Write([]byte{0x00, 0x61, 0x73, 0x6d}) // WASM_BINARY_MAGIC
 	buffer.Write([]byte{0x01, 0x00, 0x00, 0x00}) // WASM_BINARY_VERSION
 
-	importsSection := bytes.NewBuffer(nil)
 	funcs := []byte{}
 	exports := []byte{}
 	funcBodys := []byte{}
@@ -256,12 +264,7 @@ func (e Emitter) EmitAll() (*bytes.Buffer, error) {
 			if err != nil {
 				return nil, fmt.Errorf("Failed to emitTypes %v", err)
 			}
-			importsSection.WriteByte(byte(len(p.Name)))      // module name length
-			importsSection.Write([]byte(p.Name))             // module name
-			importsSection.WriteByte(byte(len(a.Name)))      // fn name length
-			importsSection.Write([]byte(a.Name))             // fn name
-			importsSection.WriteByte(0x00)                   // import kind
-			importsSection.WriteByte(byte(externFuncsCount)) // import signature index
+			e.EmitImports(p.Name, a.Name, externFuncsCount)
 			externFuncsCount += 1
 		}
 		for _, fun := range p.Funs {
@@ -318,8 +321,8 @@ func (e Emitter) EmitAll() (*bytes.Buffer, error) {
 	repr.Println(funcSymbolTable)
 	buffer.Write([]byte{0x01, byte(e.TypesSection.Len() + 1), byte(externFuncsCount + funcsCount)}) // Type section code, section size, num types, type data
 	buffer.Write(e.TypesSection.Bytes())
-	buffer.Write([]byte{0x02, byte(importsSection.Len() + 1), byte(externFuncsCount)}) // Imports section, section size, num imports, type data
-	buffer.Write(importsSection.Bytes())
+	buffer.Write([]byte{0x02, byte(e.ImportsSection.Len() + 1), byte(externFuncsCount)}) // Imports section, section size, num imports, type data
+	buffer.Write(e.ImportsSection.Bytes())
 	buffer.Write([]byte{0x03, byte(len(funcs) + 1), byte(funcsCount)}) // Func Sig section code, section size, num types, type data
 	buffer.Write(funcs)
 	buffer.Write([]byte{0x05, 0x03, 0x01, 0x00, 0x01})                   // Memory section code, section size, num memories, flags, initial (1 page 64KB)
