@@ -31,7 +31,7 @@ func TestCode(t *testing.T) {
 				panic(err)
 			}
 			defer file.Close()
-			data, err := GenerateCode(ast)
+			data, err := NewEmitter(ast).EmitAll()
 			if err != nil {
 				panic(err)
 			}

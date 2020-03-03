@@ -18,7 +18,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	wasmData, err := code_gen.GenerateCode(nodes)
+	wasmData, err := code_gen.NewEmitter(nodes).EmitAll()
 	if err != nil {
 		panic(err)
 	}
