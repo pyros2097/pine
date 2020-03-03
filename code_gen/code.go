@@ -5,85 +5,25 @@ import (
 	"encoding/binary"
 	"fmt"
 	"yum/ast"
+	"yum/code_gen/op"
 
 	"github.com/alecthomas/repr"
 )
 
-func EncodeSleb128(b *bytes.Buffer, v int32) {
-	for {
-		c := uint8(v & 0x7f)
-		s := uint8(v & 0x40)
-		v >>= 7
-		if (v != -1 || s == 0) && (v != 0 || s != 0) {
-			c |= 0x80
-		}
-		b.WriteByte(c)
-		if c&0x80 == 0 {
-			break
-		}
-	}
-}
-
 func writeMemoryData(b *bytes.Buffer, address byte, v int32) {
-	b.WriteByte(operandMap["i32.const"])
+	b.WriteByte(op.I32_CONST)
 	b.WriteByte(address)
-	b.WriteByte(operandMap["i32.const"])
-	EncodeSleb128(b, v)
-	b.WriteByte(operandMap["i32.store"])
+	b.WriteByte(op.I32_CONST)
+	encodeSleb128(b, v)
+	b.WriteByte(op.I32_STORE)
 	b.WriteByte(byte(0x02))
 	b.WriteByte(byte(0x00))
 }
 
 var typeMap = map[string]byte{
-	"num": 0x7c,
-	"i32": 0x7f,
+	"num": op.F64,
+	"i32": op.I32,
 }
-
-var operandMap = map[string]byte{
-	"+":             0xa0,
-	"-":             0xa1,
-	"*":             0xa2,
-	"/":             0xa3,
-	"min":           0xa4,
-	"max":           0xa5,
-	"sqrt":          0x9f,
-	"ceil":          0x9b,
-	"floor":         0x9c,
-	"trunc":         0x9d,
-	"nearest":       0x9e,
-	"abs":           0x99,
-	"neg":           0x9a,
-	"copysign":      0xa6,
-	"eq":            0x61,
-	"ne":            0x62,
-	"lt":            0x63,
-	"gt":            0x64,
-	"le":            0x65,
-	"ge":            0x66,
-	"i32.load":      0x28,
-	"f64.load":      0x2b,
-	"i32.store":     0x36,
-	"f64.store":     0x39,
-	"memory.grow":   0x40,
-	"nop":           0x01,
-	"drop":          0x1a,
-	"i32.const":     0x41,
-	"i64.const":     0x42,
-	"f32.const":     0x43,
-	"f64.const":     0x44,
-	"get_local":     0x20,
-	"set_local":     0x21,
-	"tee_local":     0x22,
-	"get_global":    0x23,
-	"set_global":    0x24,
-	"select":        0x1b,
-	"call":          0x10,
-	"call_indirect": 0x11,
-}
-
-const FUNC_END = 0x0b
-const LOCAL_GET = 0x20     // local.get
-const DECLARE_CONST = 0x41 // delcare const
 
 type FuncData struct {
 	Index      int
@@ -98,18 +38,25 @@ type FuncParam struct {
 	Type  string
 }
 
-func float64ToByte(f float64) []byte {
-	var buf bytes.Buffer
-	err := binary.Write(&buf, binary.LittleEndian, f)
-	if err != nil {
-		panic("binary.Write failed: " + err.Error())
+func emitOperation(buffer *bytes.Buffer, funcName, operation string) error {
+	switch operation {
+	case "+":
+		buffer.WriteByte(op.F64_ADD)
+	case "-":
+		buffer.WriteByte(op.F64_SUB)
+	case "*":
+		buffer.WriteByte(op.F64_MUL)
+	case "/":
+		buffer.WriteByte(op.F64_DIV)
+	default:
+		return fmt.Errorf("func '%s' operation '%s' is invalid", funcName, operation)
 	}
-	return buf.Bytes()
+	return nil
 }
 
 func emitExpression(buffer *bytes.Buffer, funcName string, funcSymbolTable map[string]FuncData, operation *string, l *ast.Literal, r *ast.Expression) error {
 	if l != nil && l.Num != nil {
-		buffer.WriteByte(operandMap["f64.const"])
+		buffer.WriteByte(op.F64_CONST)
 		buffer.Write(float64ToByte(*l.Num))
 	}
 	if l != nil && l.Str != nil {
@@ -118,31 +65,31 @@ func emitExpression(buffer *bytes.Buffer, funcName string, funcSymbolTable map[s
 		// (i32.store (i32.const 8) (i32.const 0x6c6c6568))
 		// (i32.store (i32.const 12) (i32.const 0x6f77206f))
 		// (i32.store (i32.const 16) (i32.const 0x0a646c72))
-		// buffer.WriteByte(operandMap["i32.const"])
+		// buffer.WriteByte(op.I32_CONST)
 		// buffer.WriteByte(byte(0))
 	}
 	// TODO: remove r
 	if r != nil && r.Left != nil && r.Left.Num != nil {
-		buffer.WriteByte(operandMap["f64.const"])
+		buffer.WriteByte(op.F64_CONST)
 		buffer.Write(float64ToByte(*r.Left.Num))
-		buffer.WriteByte(operandMap[*operation])
+		emitOperation(buffer, funcName, *operation)
 	}
 	if l != nil && l.Reference != nil {
 		if operation != nil {
 			ref, ok := funcSymbolTable[funcName].Params[*l.Reference]
 			if !ok {
-				return fmt.Errorf("func" + funcName + " parameter " + *l.Reference + " does not exist")
+				return fmt.Errorf("func '%s' parameter '%s' does not exist", funcName, *l.Reference)
 			}
-			buffer.WriteByte(operandMap["get_local"])
+			buffer.WriteByte(op.GET_LOCAL)
 			buffer.WriteByte(byte(ref.Index))
 		} else {
 			// funcCALL
 			callFunc, ok := funcSymbolTable[*l.Reference]
 			if !ok {
-				return fmt.Errorf("func" + funcName + " trying to call non-existing func '" + *l.Reference + "'")
+				return fmt.Errorf("func '%s' trying to call non-existing func '%s'", funcName, *l.Reference)
 			}
 			if len(callFunc.Params) != len(r.Left.Params) {
-				return fmt.Errorf("func'" + funcName + "' trying to call function '" + callFunc.Name + "' with extra parameters")
+				return fmt.Errorf("func '%s' trying to call function '%s' with extra parameters", funcName, callFunc.Name)
 			}
 			for _, v := range r.Left.Params {
 				if v.Str != nil {
@@ -190,15 +137,15 @@ func emitExpression(buffer *bytes.Buffer, funcName string, funcSymbolTable map[s
 					if !ok {
 						return fmt.Errorf("func'" + funcName + "' trying to call '" + callFunc.Name + "' with non-existing variable " + *v.Reference)
 					}
-					buffer.WriteByte(operandMap["get_local"])
+					buffer.WriteByte(op.GET_LOCAL)
 					buffer.WriteByte(byte(vref.Index))
 				}
 				if v.Str != nil {
-					buffer.WriteByte(operandMap["i32.const"])
+					buffer.WriteByte(op.I32_CONST)
 					buffer.WriteByte(byte(0))
 				}
 			}
-			buffer.WriteByte(operandMap["call"])
+			buffer.WriteByte(op.CALL)
 			buffer.WriteByte(byte(callFunc.Index))
 			// return fmt.Errorf("%s %d", callFunc.Name, callFunc.Index)
 			if r.Operator != nil {
@@ -214,9 +161,9 @@ func emitExpression(buffer *bytes.Buffer, funcName string, funcSymbolTable map[s
 		if !ok {
 			return fmt.Errorf("func'" + funcName + "' parameter '" + *r.Left.Reference + "' does not exist")
 		}
-		buffer.WriteByte(operandMap["get_local"])
+		buffer.WriteByte(op.GET_LOCAL)
 		buffer.WriteByte(byte(ref.Index))
-		buffer.WriteByte(operandMap[*operation])
+		emitOperation(buffer, funcName, *operation)
 	}
 	if r != nil && r.Operator != nil {
 		err := emitExpression(buffer, funcName, funcSymbolTable, r.Operator, nil, r.Right)
@@ -333,15 +280,15 @@ func GenerateCode(tree *ast.Ast) (*bytes.Buffer, error) {
 					return nil, err
 				}
 				if i != len(fun.Body)-1 {
-					funcbody.WriteByte(operandMap["drop"])
+					funcbody.WriteByte(op.DROP)
 				}
 			}
 			if funcSymbolTable[fun.Name].ReturnType == "" {
-				funcbody.WriteByte(operandMap["drop"])
+				funcbody.WriteByte(op.DROP)
 			}
 			funcBodys = append(funcBodys, byte(len(funcbody.Bytes())+1)) // funcbody size
 			funcBodys = append(funcBodys, funcbody.Bytes()...)
-			funcBodys = append(funcBodys, FUNC_END)
+			funcBodys = append(funcBodys, op.FUNC_END)
 			// if fnIndex == 1 {
 			// 	return nil, fmt.Errorf(fmt.Sprintf("%+v", funcbody.Bytes()))
 			// }

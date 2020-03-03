@@ -246,7 +246,7 @@ type ForIteratorStatement struct {
 
 type Expression struct {
 	Left     *Literal    `@@`
-	Operator *string     `{ @("+" | "-" | "*" | "/" | "<=" | ">=" | "=""=" | "<" | ">" | "!=") }`
+	Operator *string     `{ @("+" | "-" | "*" | "/" | "<=" | ">=" | "=""=" | "<" | ">" | "!=" | ":""=" | "=") }`
 	Right    *Expression `{ @@ }`
 }
 
