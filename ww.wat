@@ -23,6 +23,19 @@
              (f64.const 1.0)
         )
         drop
+        (i32.store (i32.const 0) (i32.const 8))  ;; iov.iov_base - This is a pointer to the start of the 'hello world\n' string
+        (i32.store (i32.const 4) (i32.const 12))  ;; iov.iov_len - The length of the 'hello world\n' string
+        (i32.store (i32.const 8) (i32.const 0x6c6c6568))
+        ;;  1819043176
+        ;; 0000039: e8ca b1e3 06    
+        (i32.store (i32.const 12) (i32.const 0x6f77206f))
+        (i32.store (i32.const 16) (i32.const 0x0a646c72))
+
+        (f64.add 
+            (f64.const 0.0)
+             (f64.const 1.0)
+        )
+        drop
 
         (call $fd_write
             (i32.const 1) ;; file_descriptor - 1 for stdout

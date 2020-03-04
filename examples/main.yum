@@ -8,4 +8,11 @@ add = a: num, b: num -> num
 _start = ->
   add(1, 2)
   add(1, 2)
-  fd_write(1, "hello world", 1, 12)
+  add(1, 2)
+  add(1, 2)
+  add(1, 2)
+  add(1, 2)
+  fd_write(1, "hello world", 1, 20)
+  fd_write(1, "hello world", 1, 20)
+  fd_write(1, "hello world", 1, 20)
+  fd_write(1, "sqdasd", 1, 20)

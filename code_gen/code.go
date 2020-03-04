@@ -41,8 +41,8 @@ type Emitter struct {
 	funcs            map[string]*FuncData
 	externFuncsCount int
 	funcsCount       int
-	startAddress     int
 	globalsCount     int
+	initial          bool
 }
 
 func NewEmitter(tree *ast.Ast) *Emitter {
@@ -58,7 +58,7 @@ func NewEmitter(tree *ast.Ast) *Emitter {
 		Tree:             tree,
 		externFuncsCount: 0,
 		funcsCount:       0,
-		startAddress:     0,
+		initial:          false,
 	}
 }
 
@@ -124,7 +124,7 @@ func (e *Emitter) EmitFuncBody(name string, body []*ast.Block) error {
 	if e.funcs[name].ReturnType == "" {
 		buf.WriteByte(op.DROP)
 	}
-	e.FuncsBodySection.WriteByte(byte(len(buf.Bytes()) + 1)) // funcbody size
+	encodeSleb128(e.FuncsBodySection, int32(buf.Len()+1)) // funcbody size
 	e.FuncsBodySection.Write(buf.Bytes())
 	e.FuncsBodySection.WriteByte(op.END)
 	return nil
@@ -262,9 +262,31 @@ func (e *Emitter) emitOperation(buffer *bytes.Buffer, funcName, operation string
 	return nil
 }
 
-func (e *Emitter) emitStore(b *bytes.Buffer, address byte, v int32) {
+func (e *Emitter) emitHeapNext(b *bytes.Buffer) {
+	// (set_global $heap-next (i32.add (get_global $heap-next) (i32.const 4)))
+	// (get_global $heap-next)
+	size := 4
+	if e.initial == false {
+		e.initial = true
+		size = 0
+	}
+	b.WriteByte(op.GET_GLOBAL)
+	b.WriteByte(byte(0x00)) // global heap_index
 	b.WriteByte(op.I32_CONST)
-	b.WriteByte(address)
+	b.WriteByte(byte(size))
+	b.WriteByte(op.I32_ADD)
+	b.WriteByte(byte(op.SET_GLOBAL))
+	b.WriteByte(byte(0x00))
+	b.WriteByte(byte(op.GET_GLOBAL))
+	b.WriteByte(byte(0x00))
+
+}
+
+func (e *Emitter) emitStore(b *bytes.Buffer, v int32) {
+	//  (i32.store (get_global $heap-next) (i32.const 8))
+	e.emitHeapNext(b)
+	// b.WriteByte(op.I32_CONST)
+	// b.WriteByte(address)
 	b.WriteByte(op.I32_CONST)
 	encodeSleb128(b, v)
 	b.WriteByte(op.I32_STORE)
@@ -272,6 +294,11 @@ func (e *Emitter) emitStore(b *bytes.Buffer, address byte, v int32) {
 	b.WriteByte(byte(0x00))
 }
 
+// (i32.store (i32.const 0) (i32.const 8))  ;; iov.iov_base - This is a pointer to the start of the 'hello world\n' string
+// (i32.store (i32.const 4) (i32.const 12))  ;; iov.iov_len - The length of the 'hello world\n' string
+// (i32.store (i32.const 8) (i32.const 0x6c6c6568))
+// (i32.store (i32.const 12) (i32.const 0x6f77206f))
+// (i32.store (i32.const 16) (i32.const 0x0a646c72))
 func (e *Emitter) emitString(b *bytes.Buffer, str string) int {
 	data := []byte(str)
 	if len(data)%4 == 1 {
@@ -284,26 +311,19 @@ func (e *Emitter) emitString(b *bytes.Buffer, str string) int {
 		data = append(data, '\n')
 	}
 
-	// (i32.store (i32.const 0) (i32.const 8))  ;; iov.iov_base - This is a pointer to the start of the 'hello world\n' string
-	// (i32.store (i32.const 4) (i32.const 12))  ;; iov.iov_len - The length of the 'hello world\n' string
-	// (i32.store (i32.const 8) (i32.const 0x6c6c6568))
-	// (i32.store (i32.const 12) (i32.const 0x6f77206f))
-	// (i32.store (i32.const 16) (i32.const 0x0a646c72))
-	ptr := e.startAddress
-	e.emitStore(b, byte(e.startAddress), 8)
-	e.startAddress += 4
-	e.emitStore(b, byte(e.startAddress), int32(len(string(data))))
+	e.emitStore(b, 8)                        // start of the string (i32.store (i32.const 0) (i32.const 8))
+	e.emitStore(b, int32(len(string(data)))) // length of the string (i32.store (i32.const 4) (i32.const 12))
 	startData := 0
 	for i := range data {
 		index := i + 1
 		if index%4 == 0 {
-			e.startAddress += 4
 			startData = index - 4
 			remainingData := data[startData:index]
-			e.emitStore(b, byte(e.startAddress), int32(binary.LittleEndian.Uint32(remainingData)))
+			e.emitStore(b, int32(binary.LittleEndian.Uint32(remainingData)))
 		}
 	}
-	return ptr
+
+	return 0
 }
 
 func (e *Emitter) EmitMemory() {
@@ -311,10 +331,9 @@ func (e *Emitter) EmitMemory() {
 }
 
 func (e *Emitter) EmitRuntime() {
-	e.GlobalsSection.Write([]byte{op.I32, 0x01, op.I32_CONST, 0x00, op.END}) // type, global mutability, value
-	e.GlobalsSection.Write([]byte{op.I32, 0x01, op.I32_CONST, 0x00, op.END})
-	e.GlobalsSection.Write([]byte{op.I32, 0x01, op.I32_CONST, 0x00, op.END})
-	e.globalsCount = 3
+	// type, global mutability, value
+	e.GlobalsSection.Write([]byte{op.I32, 0x01, op.I32_CONST, 0x00, op.END}) // heap-next
+	e.globalsCount = 1
 }
 
 func (e *Emitter) EmitAll() (*bytes.Buffer, error) {
@@ -393,7 +412,9 @@ func (e *Emitter) EmitAll() (*bytes.Buffer, error) {
 	buffer.Write(e.GlobalsSection.Bytes())
 	buffer.Write([]byte{op.SECTION_EXPORTS, byte(e.ExportsSection.Len() + 1), byte(e.funcsCount)}) // exports section code, section size, num exports
 	buffer.Write(e.ExportsSection.Bytes())
-	buffer.Write([]byte{op.SECTION_FUNCS_BODY, byte(e.FuncsBodySection.Len() + 1), byte(e.funcsCount)}) // funcbody section code, section size, num functions
+	buffer.WriteByte(op.SECTION_FUNCS_BODY)                  // funcbody section code
+	encodeSleb128(buffer, int32(e.FuncsBodySection.Len()+1)) // section size
+	buffer.WriteByte(byte(e.funcsCount))                     // num functions
 	buffer.Write(e.FuncsBodySection.Bytes())
 	return buffer, nil
 }

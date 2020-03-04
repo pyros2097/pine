@@ -21,9 +21,14 @@
     ;; (; STACK END ;)
 
     (; HEAP BEGIN ;)
-    (global $heap-start (mut i32) (i32.const 0))
-    (global $heap-end (mut i32) (i32.const 0))
     (global $heap-next (mut i32) (i32.const 0))
+    
+    (func $main (export "main")
+        (set_global $heap-next (i32.add (get_global $heap-next) (i32.const 4)))
+        (i32.store (get_global $heap-next) (i32.const 8))
+    )
+
+    
 
     ;; (func $alligned (param $size i32) (result i32)
     ;;     (get_local $size)
