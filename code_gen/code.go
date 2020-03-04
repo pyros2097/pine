@@ -33,6 +33,8 @@ type Emitter struct {
 	TypesSection     *bytes.Buffer
 	ImportsSection   *bytes.Buffer
 	FuncsSection     *bytes.Buffer
+	MemorySection    *bytes.Buffer
+	GlobalsSection   *bytes.Buffer
 	ExportsSection   *bytes.Buffer
 	FuncsBodySection *bytes.Buffer
 	Tree             *ast.Ast
@@ -40,13 +42,16 @@ type Emitter struct {
 	externFuncsCount int
 	funcsCount       int
 	startAddress     int
+	globalsCount     int
 }
 
-func NewEmitter(tree *ast.Ast) Emitter {
-	return Emitter{
+func NewEmitter(tree *ast.Ast) *Emitter {
+	return &Emitter{
 		TypesSection:     bytes.NewBuffer(nil),
 		ImportsSection:   bytes.NewBuffer(nil),
 		FuncsSection:     bytes.NewBuffer(nil),
+		MemorySection:    bytes.NewBuffer(nil),
+		GlobalsSection:   bytes.NewBuffer(nil),
 		ExportsSection:   bytes.NewBuffer(nil),
 		FuncsBodySection: bytes.NewBuffer(nil),
 		funcs:            map[string]*FuncData{},
@@ -57,7 +62,7 @@ func NewEmitter(tree *ast.Ast) Emitter {
 	}
 }
 
-func (e Emitter) EmitTypes(name string) error {
+func (e *Emitter) EmitTypes(name string) error {
 	fun := e.funcs[name]
 	e.TypesSection.WriteByte(0x60)                  // type func
 	e.TypesSection.WriteByte(byte(len(fun.Params))) // num params
@@ -82,7 +87,7 @@ func (e Emitter) EmitTypes(name string) error {
 	return nil
 }
 
-func (e Emitter) EmitImports(moduleName, funcName string, typeIndex int) {
+func (e *Emitter) EmitImports(moduleName, funcName string, typeIndex int) {
 	e.ImportsSection.WriteByte(byte(len(moduleName))) // module name length
 	e.ImportsSection.Write([]byte(moduleName))        // module name
 	e.ImportsSection.WriteByte(byte(len(funcName)))   // fn name length
@@ -91,7 +96,7 @@ func (e Emitter) EmitImports(moduleName, funcName string, typeIndex int) {
 	e.ImportsSection.WriteByte(byte(typeIndex))       // import signature index
 }
 
-func (e Emitter) EmitFuncs(name string, typeIndex int) {
+func (e *Emitter) EmitFuncs(name string, typeIndex int) {
 	e.FuncsSection.WriteByte(byte(typeIndex))
 	e.ExportsSection.WriteByte(byte(len(name))) // name length
 	e.ExportsSection.Write([]byte(name))
@@ -99,11 +104,11 @@ func (e Emitter) EmitFuncs(name string, typeIndex int) {
 	e.ExportsSection.WriteByte(byte(typeIndex)) // export funcindex
 }
 
-func (e Emitter) EmitExports(typeIndex int) {
+func (e *Emitter) EmitExports(typeIndex int) {
 	e.FuncsSection.WriteByte(byte(typeIndex))
 }
 
-func (e Emitter) EmitFuncBody(name string, body []*ast.Block) error {
+func (e *Emitter) EmitFuncBody(name string, body []*ast.Block) error {
 	buf := bytes.NewBuffer([]byte{
 		0x00, // local decl count
 	})
@@ -121,11 +126,11 @@ func (e Emitter) EmitFuncBody(name string, body []*ast.Block) error {
 	}
 	e.FuncsBodySection.WriteByte(byte(len(buf.Bytes()) + 1)) // funcbody size
 	e.FuncsBodySection.Write(buf.Bytes())
-	e.FuncsBodySection.WriteByte(op.FUNC_END)
+	e.FuncsBodySection.WriteByte(op.END)
 	return nil
 }
 
-func (e Emitter) emitExpression(buffer *bytes.Buffer, funcName string, operation *string, l *ast.Literal, r *ast.Expression) error {
+func (e *Emitter) emitExpression(buffer *bytes.Buffer, funcName string, operation *string, l *ast.Literal, r *ast.Expression) error {
 	if l != nil && l.Num != nil {
 		buffer.WriteByte(op.F64_CONST)
 		buffer.Write(float64ToByte(*l.Num))
@@ -241,7 +246,7 @@ func (e Emitter) emitExpression(buffer *bytes.Buffer, funcName string, operation
 //   _length = a: string -> i32
 //     (i32.store (i32.const 4) (i32.const 12)) // iov.iov_len - The length of the 'hello world\n' string
 
-func (e Emitter) emitOperation(buffer *bytes.Buffer, funcName, operation string) error {
+func (e *Emitter) emitOperation(buffer *bytes.Buffer, funcName, operation string) error {
 	switch operation {
 	case "+":
 		buffer.WriteByte(op.F64_ADD)
@@ -257,7 +262,7 @@ func (e Emitter) emitOperation(buffer *bytes.Buffer, funcName, operation string)
 	return nil
 }
 
-func (e Emitter) emitStore(b *bytes.Buffer, address byte, v int32) {
+func (e *Emitter) emitStore(b *bytes.Buffer, address byte, v int32) {
 	b.WriteByte(op.I32_CONST)
 	b.WriteByte(address)
 	b.WriteByte(op.I32_CONST)
@@ -267,7 +272,7 @@ func (e Emitter) emitStore(b *bytes.Buffer, address byte, v int32) {
 	b.WriteByte(byte(0x00))
 }
 
-func (e Emitter) emitString(b *bytes.Buffer, str string) int {
+func (e *Emitter) emitString(b *bytes.Buffer, str string) int {
 	data := []byte(str)
 	if len(data)%4 == 1 {
 		data = append(data, 0)
@@ -301,10 +306,23 @@ func (e Emitter) emitString(b *bytes.Buffer, str string) int {
 	return ptr
 }
 
-func (e Emitter) EmitAll() (*bytes.Buffer, error) {
+func (e *Emitter) EmitMemory() {
+	e.MemorySection.Write([]byte{0x00, 0x01}) // flags, initial (1 page 64KB)
+}
+
+func (e *Emitter) EmitRuntime() {
+	e.GlobalsSection.Write([]byte{op.I32, 0x01, op.I32_CONST, 0x00, op.END}) // type, global mutability, value
+	e.GlobalsSection.Write([]byte{op.I32, 0x01, op.I32_CONST, 0x00, op.END})
+	e.GlobalsSection.Write([]byte{op.I32, 0x01, op.I32_CONST, 0x00, op.END})
+	e.globalsCount = 3
+}
+
+func (e *Emitter) EmitAll() (*bytes.Buffer, error) {
 	buffer := bytes.NewBuffer(nil)
 	buffer.Write([]byte{0x00, 0x61, 0x73, 0x6d}) // WASM_BINARY_MAGIC
 	buffer.Write([]byte{0x01, 0x00, 0x00, 0x00}) // WASM_BINARY_VERSION
+	e.EmitMemory()
+	e.EmitRuntime()
 
 	for _, p := range e.Tree.Modules {
 		for _, a := range p.ExternFuncs {
@@ -363,16 +381,19 @@ func (e Emitter) EmitAll() (*bytes.Buffer, error) {
 		}
 	}
 	repr.Println(e.funcs)
-	buffer.Write([]byte{0x01, byte(e.TypesSection.Len() + 1), byte(e.externFuncsCount + e.funcsCount)}) // Type section code, section size, num types, type data
+	buffer.Write([]byte{op.SECTION_TYPES, byte(e.TypesSection.Len() + 1), byte(e.externFuncsCount + e.funcsCount)}) // Type section code, section size, num types, type data
 	buffer.Write(e.TypesSection.Bytes())
-	buffer.Write([]byte{0x02, byte(e.ImportsSection.Len() + 1), byte(e.externFuncsCount)}) // Imports section, section size, num imports, type data
+	buffer.Write([]byte{op.SECTION_IMPORTS, byte(e.ImportsSection.Len() + 1), byte(e.externFuncsCount)}) // Imports section, section size, num imports, type data
 	buffer.Write(e.ImportsSection.Bytes())
-	buffer.Write([]byte{0x03, byte(e.FuncsSection.Len() + 1), byte(e.funcsCount)}) // Func Sig section code, section size, num types, type data
+	buffer.Write([]byte{op.SECTION_FUNCS, byte(e.FuncsSection.Len() + 1), byte(e.funcsCount)}) // Func Sig section code, section size, num types, type data
 	buffer.Write(e.FuncsSection.Bytes())
-	buffer.Write([]byte{0x05, 0x03, 0x01, 0x00, 0x01})                               // Memory section code, section size, num memories, flags, initial (1 page 64KB)
-	buffer.Write([]byte{0x07, byte(e.ExportsSection.Len() + 1), byte(e.funcsCount)}) // exports section code, section size, num exports
+	buffer.Write([]byte{op.SECTION_MEMORY, byte(e.MemorySection.Len() + 1), 0x01}) // Memory section code, section size, num memories
+	buffer.Write(e.MemorySection.Bytes())
+	buffer.Write([]byte{op.SECTION_GLOBALS, byte(e.GlobalsSection.Len() + 1), byte(e.globalsCount)}) // globals section code, section size, num globals
+	buffer.Write(e.GlobalsSection.Bytes())
+	buffer.Write([]byte{op.SECTION_EXPORTS, byte(e.ExportsSection.Len() + 1), byte(e.funcsCount)}) // exports section code, section size, num exports
 	buffer.Write(e.ExportsSection.Bytes())
-	buffer.Write([]byte{0x0a, byte(e.FuncsBodySection.Len() + 1), byte(e.funcsCount)}) // funcbody section code, section size, num functions
+	buffer.Write([]byte{op.SECTION_FUNCS_BODY, byte(e.FuncsBodySection.Len() + 1), byte(e.funcsCount)}) // funcbody section code, section size, num functions
 	buffer.Write(e.FuncsBodySection.Bytes())
 	return buffer, nil
 }

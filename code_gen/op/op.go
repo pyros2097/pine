@@ -1,5 +1,13 @@
 package op
 
+const SECTION_TYPES = 0x01
+const SECTION_IMPORTS = 0x02
+const SECTION_FUNCS = 0x03
+const SECTION_MEMORY = 0x05
+const SECTION_GLOBALS = 0x06
+const SECTION_EXPORTS = 0x07
+const SECTION_FUNCS_BODY = 0x0a
+
 const I32 = 0x7f
 const F64 = 0x7c
 const F64_ADD = 0xa0
@@ -41,4 +49,4 @@ const SET_GLOBAL = 0x24
 const SELECT = 0x1b
 const CALL = 0x10
 const CALL_INDIRECT = 0x11
-const FUNC_END = 0x0b
+const END = 0x0b

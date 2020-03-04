@@ -174,115 +174,27 @@
               Exp: &ast.Expression{
                 Left: &ast.Literal{
                   Pos: Position{Filename: "", Offset: 131, Line: 11, Column: 3},
-                  Reference: &"add",
+                  Reference: &"fd_write",
                 },
                 Right: &ast.Expression{
                   Left: &ast.Literal{
-                    Pos: Position{Filename: "", Offset: 134, Line: 11, Column: 6},
+                    Pos: Position{Filename: "", Offset: 139, Line: 11, Column: 11},
                     Params: []*ast.Literal{
                       &ast.Literal{
-                        Pos: Position{Filename: "", Offset: 135, Line: 11, Column: 7},
+                        Pos: Position{Filename: "", Offset: 140, Line: 11, Column: 12},
                         Num: &1,
                       },
                       &ast.Literal{
-                        Pos: Position{Filename: "", Offset: 138, Line: 11, Column: 10},
-                        Num: &2,
+                        Pos: Position{Filename: "", Offset: 143, Line: 11, Column: 15},
+                        Str: &"hello world",
                       },
-                    },
-                  },
-                },
-              },
-              End: &"\n",
-            },
-            &ast.Block{
-              Exp: &ast.Expression{
-                Left: &ast.Literal{
-                  Pos: Position{Filename: "", Offset: 143, Line: 12, Column: 3},
-                  Reference: &"add",
-                },
-                Right: &ast.Expression{
-                  Left: &ast.Literal{
-                    Pos: Position{Filename: "", Offset: 146, Line: 12, Column: 6},
-                    Params: []*ast.Literal{
                       &ast.Literal{
-                        Pos: Position{Filename: "", Offset: 147, Line: 12, Column: 7},
+                        Pos: Position{Filename: "", Offset: 158, Line: 11, Column: 30},
                         Num: &1,
                       },
                       &ast.Literal{
-                        Pos: Position{Filename: "", Offset: 150, Line: 12, Column: 10},
-                        Num: &2,
-                      },
-                    },
-                  },
-                },
-              },
-              End: &"\n",
-            },
-            &ast.Block{
-              Exp: &ast.Expression{
-                Left: &ast.Literal{
-                  Pos: Position{Filename: "", Offset: 155, Line: 13, Column: 3},
-                  Reference: &"add",
-                },
-                Right: &ast.Expression{
-                  Left: &ast.Literal{
-                    Pos: Position{Filename: "", Offset: 158, Line: 13, Column: 6},
-                    Params: []*ast.Literal{
-                      &ast.Literal{
-                        Pos: Position{Filename: "", Offset: 159, Line: 13, Column: 7},
-                        Num: &1,
-                      },
-                      &ast.Literal{
-                        Pos: Position{Filename: "", Offset: 162, Line: 13, Column: 10},
-                        Num: &2,
-                      },
-                    },
-                  },
-                },
-              },
-              End: &"\n",
-            },
-            &ast.Block{
-              Exp: &ast.Expression{
-                Left: &ast.Literal{
-                  Pos: Position{Filename: "", Offset: 167, Line: 14, Column: 3},
-                  Reference: &"add",
-                },
-                Right: &ast.Expression{
-                  Left: &ast.Literal{
-                    Pos: Position{Filename: "", Offset: 170, Line: 14, Column: 6},
-                    Params: []*ast.Literal{
-                      &ast.Literal{
-                        Pos: Position{Filename: "", Offset: 171, Line: 14, Column: 7},
-                        Num: &1,
-                      },
-                      &ast.Literal{
-                        Pos: Position{Filename: "", Offset: 174, Line: 14, Column: 10},
-                        Num: &2,
-                      },
-                    },
-                  },
-                },
-              },
-              End: &"\n",
-            },
-            &ast.Block{
-              Exp: &ast.Expression{
-                Left: &ast.Literal{
-                  Pos: Position{Filename: "", Offset: 179, Line: 15, Column: 3},
-                  Reference: &"add",
-                },
-                Right: &ast.Expression{
-                  Left: &ast.Literal{
-                    Pos: Position{Filename: "", Offset: 182, Line: 15, Column: 6},
-                    Params: []*ast.Literal{
-                      &ast.Literal{
-                        Pos: Position{Filename: "", Offset: 183, Line: 15, Column: 7},
-                        Num: &1,
-                      },
-                      &ast.Literal{
-                        Pos: Position{Filename: "", Offset: 186, Line: 15, Column: 10},
-                        Num: &2,
+                        Pos: Position{Filename: "", Offset: 161, Line: 11, Column: 33},
+                        Num: &12,
                       },
                     },
                   },
