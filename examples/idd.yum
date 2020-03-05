@@ -1,10 +1,3 @@
-environment:
-    x: 123
-    b: abc
-
-a: 123
-b: 123
-
 Abc = name: string data: string => int
     println "Hello"
     println "${name}"
