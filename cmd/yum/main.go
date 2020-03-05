@@ -2,8 +2,7 @@ package main
 
 import (
 	"os"
-	"yum/compiler/ast"
-	"yum/compiler/emitter"
+	"yum/compiler"
 
 	wasm "github.com/wasmerio/go-ext-wasm/wasmer"
 )
@@ -14,11 +13,11 @@ func main() {
 		return
 	}
 	filename := os.Args[1]
-	nodes, err := ast.ParseFile(filename)
+	nodes, err := compiler.ParseFile(filename)
 	if err != nil {
 		panic(err)
 	}
-	wasmData, err := emitter.NewEmitter(nodes).EmitAll()
+	wasmData, err := compiler.NewEmitter(nodes).EmitAll()
 	if err != nil {
 		panic(err)
 	}

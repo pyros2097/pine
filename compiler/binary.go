@@ -1,4 +1,4 @@
-package emitter
+package compiler
 
 import (
 	"bytes"

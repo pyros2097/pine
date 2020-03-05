@@ -21,7 +21,7 @@ import (
 )
 
 @route(/about/{name}")
-func about(name string) -> Html {
+proc about(name string) -> Html =
     return (
         <Window x="1" y="2" width="480" height="800">
             <VBox>
@@ -29,7 +29,6 @@ func about(name string) -> Html {
             </VBox>
         </Window>
     )
-}
 
 router(host: "localhost", port: 1234)
 ```

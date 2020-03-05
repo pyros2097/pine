@@ -1,11 +1,11 @@
-package emitter
+package compiler
 
 import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"yum/compiler/ast"
-	"yum/compiler/emitter/op"
+
+	"yum/compiler/op"
 
 	"github.com/alecthomas/repr"
 )
@@ -37,7 +37,7 @@ type Emitter struct {
 	GlobalsSection   *bytes.Buffer
 	ExportsSection   *bytes.Buffer
 	FuncsBodySection *bytes.Buffer
-	Tree             *ast.Ast
+	Tree             *Ast
 	funcs            map[string]*FuncData
 	externFuncsCount int
 	funcsCount       int
@@ -45,7 +45,7 @@ type Emitter struct {
 	initial          bool
 }
 
-func NewEmitter(tree *ast.Ast) *Emitter {
+func NewEmitter(tree *Ast) *Emitter {
 	return &Emitter{
 		TypesSection:     bytes.NewBuffer(nil),
 		ImportsSection:   bytes.NewBuffer(nil),
@@ -108,7 +108,7 @@ func (e *Emitter) EmitExports(typeIndex int) {
 	e.FuncsSection.WriteByte(byte(typeIndex))
 }
 
-func (e *Emitter) EmitFuncBody(name string, body []*ast.Block) error {
+func (e *Emitter) EmitFuncBody(name string, body []*Block) error {
 	buf := bytes.NewBuffer([]byte{
 		0x00, // local decl count
 	})
@@ -130,7 +130,7 @@ func (e *Emitter) EmitFuncBody(name string, body []*ast.Block) error {
 	return nil
 }
 
-func (e *Emitter) emitExpression(buffer *bytes.Buffer, funcName string, operation *string, l *ast.Literal, r *ast.Expression) error {
+func (e *Emitter) emitExpression(buffer *bytes.Buffer, funcName string, operation *string, l *Literal, r *Expression) error {
 	if l != nil && l.Num != nil {
 		buffer.WriteByte(op.F64_CONST)
 		buffer.Write(float64ToByte(*l.Num))

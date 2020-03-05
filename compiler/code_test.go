@@ -1,4 +1,4 @@
-package emitter
+package compiler
 
 import (
 	"bytes"
@@ -6,23 +6,18 @@ import (
 	"os"
 	"strings"
 	"testing"
-	"yum/compiler/ast"
 
 	"github.com/alecthomas/assert"
 	"github.com/stretchr/testify/require"
 	wasm "github.com/wasmerio/go-ext-wasm/wasmer"
 )
 
-var testCases = []string{
-	"main.yum",
-}
-
 func TestCode(t *testing.T) {
 	assert.NoError(t, os.Setenv("UPDATE_SNAPSHOTS", "true"))
 	// snapshotter := cupaloy.New(cupaloy.SnapshotSubdirectory(".snapshots"))
 	for _, fileName := range testCases {
 		t.Run(fileName, func(t *testing.T) {
-			ast, err := ast.ParseFile("../../examples/" + fileName)
+			ast, err := ParseFile("../examples/" + fileName)
 			require.NoError(t, err)
 
 			wasmFileName := strings.Replace(fileName, ".yum", ".wasm", 1)

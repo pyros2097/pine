@@ -1,4 +1,4 @@
-package ast
+package compiler
 
 import (
 	"fmt"
@@ -28,7 +28,7 @@ func ParseFile(filename string) (*Ast, error) {
 			parts := strings.Split(imp.Url, "/")
 			moduleName := parts[len(parts)-1]
 			println(moduleName)
-			subTree, err := ParseFile("../../examples/" + moduleName + ".yum")
+			subTree, err := ParseFile("../examples/" + moduleName + ".yum")
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse module: %s -> %v", moduleName, err)
 			}
