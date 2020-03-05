@@ -1,11 +1,11 @@
-package code_gen
+package emitter
 
 import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"yum/ast"
-	"yum/code_gen/op"
+	"yum/compiler/ast"
+	"yum/compiler/emitter/op"
 
 	"github.com/alecthomas/repr"
 )

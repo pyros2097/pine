@@ -23,7 +23,7 @@ func TestAst(t *testing.T) {
 	snapshotter := cupaloy.New(cupaloy.SnapshotSubdirectory(".snapshots"))
 	for _, fileName := range testCases {
 		t.Run(fileName, func(t *testing.T) {
-			result, err := ParseFile("../examples/" + fileName)
+			result, err := ParseFile("../../examples/" + fileName)
 			require.NoError(t, err)
 			resultString := repr.String(result, repr.Indent("  "))
 			snapshotter.SnapshotTName(t, strings.Replace(fileName, ".yum", ".go", 1), resultString)

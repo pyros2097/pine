@@ -1,4 +1,4 @@
-package code_gen
+package emitter
 
 import (
 	"bytes"
@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 	"testing"
-	"yum/ast"
+	"yum/compiler/ast"
 
 	"github.com/alecthomas/assert"
 	"github.com/stretchr/testify/require"
@@ -22,7 +22,7 @@ func TestCode(t *testing.T) {
 	// snapshotter := cupaloy.New(cupaloy.SnapshotSubdirectory(".snapshots"))
 	for _, fileName := range testCases {
 		t.Run(fileName, func(t *testing.T) {
-			ast, err := ast.ParseFile("../examples/" + fileName)
+			ast, err := ast.ParseFile("../../examples/" + fileName)
 			require.NoError(t, err)
 
 			wasmFileName := strings.Replace(fileName, ".yum", ".wasm", 1)

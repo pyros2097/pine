@@ -2,8 +2,8 @@ package main
 
 import (
 	"os"
-	"yum/ast"
-	"yum/code_gen"
+	"yum/compiler/ast"
+	"yum/compiler/emitter"
 
 	wasm "github.com/wasmerio/go-ext-wasm/wasmer"
 )
@@ -18,7 +18,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	wasmData, err := code_gen.NewEmitter(nodes).EmitAll()
+	wasmData, err := emitter.NewEmitter(nodes).EmitAll()
 	if err != nil {
 		panic(err)
 	}
