@@ -1,6 +1,16 @@
 # The Yum Programming Language
 
-# First class dependent types
+![Test](https://github.com/pyros2097/yum/workflows/Test/badge.svg)
+
+## Features
+
+- First class functions
+- First class dependent types
+- Webassembly Target
+- Clean Syntax
+- power echo, assert
+- i32, f32, tuple, object, enum
+- proc, method
 
 ## Example
 
