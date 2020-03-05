@@ -9,170 +9,68 @@ import (
 	"github.com/alecthomas/participle/lexer"
 )
 
-var parser = participle.MustBuild(&Ast{},
-	participle.Lexer(DefaultDefinition),
-)
-
-func ParseFile(filename string) (*Ast, error) {
-	data, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-	tree := &Ast{}
-	err = parser.ParseBytes(data, tree)
-	if err != nil {
-		return nil, err
-	}
-	for _, p := range tree.Modules {
-		for _, imp := range p.Imports {
-			parts := strings.Split(imp.Url, "/")
-			moduleName := parts[len(parts)-1]
-			println(moduleName)
-			subTree, err := ParseFile("../examples/" + moduleName + ".yum")
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse module: %s -> %v", moduleName, err)
-			}
-			tree.Modules = append(subTree.Modules, tree.Modules...)
-		}
-	}
-	return tree, nil
-}
-
 type Ast struct {
 	Pos     lexer.Position
 	Modules []*Module `{ @@ }`
 }
 
 type Module struct {
-	Pos         lexer.Position
-	Name        string             `"module" @Ident`
-	End         *string            `@NewLine`
-	Imports     []*ImportStatement `{ @@ }`
-	ExternFuncs []*ExternFunc      `{ @@ }`
-	Classes     []*Class           `{ @@ }`
-	Funs        []*FunDecl         `{ @@ }`
-	// Enums    []*Enum            `| @@`
-	Typedefs []*Typedef `{ @@ }`
-	// Consts     []*ConstAssignment `| @@`
+	Pos       lexer.Position
+	Name      string      `"module" @Ident`
+	End       *string     `@NewLine`
+	Imports   []*Import   `{ @@ }`
+	Types     []*Type     `{ @@ }`
+	Functions []*Function `{ @@ }`
 }
 
-type ImportStatement struct {
+type Import struct {
 	Pos   lexer.Position
 	Start *string `@NewLine`
 	Url   string  `"import" @String`
 	End   *string `@NewLine`
 }
 
-type ExternFunc struct {
-	Pos        lexer.Position
-	Start      string           `@NewLine`
-	Name       string           `"extern" @Ident`
-	Parameters []*FuncParameter `"func""(" [ @@ { "," @@ } ] ")"`
-	ReturnType string           `"-"">" { @Ident }`
-	End        *string          `@NewLine`
-}
+// type Fun struct {
+// 	Pos       lexer.Position
+// 	Decorator *DecoratorDecl `{ @@ }`
+// 	Fun       *FunDecl       `{ @@ }`
+// }
 
-// type CommentStatement struct {
-// 	Pos  lexer.Position
-// 	Text string `@Comment`
+// type DecoratorDecl struct {
+// 	Pos    lexer.Position
+// 	Name   string     `"@" @Ident`
+// 	Values []*Literal `"(" [ @@ { "," @@ } ] ")"`
 // }
 
 type Type struct {
-	Pos  lexer.Position
-	Name string `":" @Ident`
-}
-
-type ReturnType struct {
-	Pos  lexer.Position
-	Name string `"-"">" @Ident`
-}
-
-type KeyValue struct {
 	Pos   lexer.Position
-	Key   string   `@Ident`
-	Value *Literal `"=" @@`
+	Start string `@NewLine`
+	Name  string `"type" @Ident`
+	Alias string `@Ident`
+	End   string `@NewLine`
 }
 
-type ClassTrait struct {
-	Pos lexer.Position
-	ID  string `@Ident`
-}
-
-type ClassField struct {
-	Pos  lexer.Position
-	Name string `@Ident`
-	Type *Type  `@@`
-	// Default     *Literal      `[ "=" @@ ]`
-	// Annotations []*Annotation `[ "(" @@ { "," @@ } ")" ] [ ";" ]`
-}
-
-type Class struct {
-	Pos   lexer.Position
-	Start string  `@NewLine`
-	Name  string  `"class" @Ident`
-	Next  *string `@NewLine`
-	// Fields        []*ClassField   `{ @@ }`
-	CompilerFuncs []*CompilerFunc `{ @@ }`
-	// CommentStatement []*CommentStatement `{ @@ }`
-	// Methods []*Fun         `{ @@ }`
-	End *string `@NewLine`
-}
-
-type Enum struct {
-	Pos   lexer.Position
-	Name  string   `"enum" @Ident "{"w`
-	Cases []string `{ @Ident } "}"`
-}
-
-type Typedef struct {
-	Pos  lexer.Position
-	Type *Type  `"typedef" @@`
-	Name string `@Ident`
+type Function struct {
+	Pos        lexer.Position
+	Start      string          `@NewLine`
+	Type       string          `@("extern" | "proc" | "method")`
+	Name       string          `@Ident`
+	Parameters []FuncParameter `"(" [ @@ { "," @@ } ] ")"`
+	ReturnType string          `"-"">" { @Ident }`
+	EndReturn  string          `@NewLine`
+	Body       []*Block        `{ @@ }`
+	End        string          `@NewLine`
 }
 
 type FuncParameter struct {
 	Pos  lexer.Position
-	Name string `@Ident`
-	Type *Type  `@@`
+	Name string            `@Ident`
+	Type FuncParameterType `@@`
 }
 
-type MethodCallParameter struct {
+type FuncParameterType struct {
 	Pos  lexer.Position
-	ID   string `@Ident`
-	Type *Type  `@@`
-}
-
-type DecoratorDecl struct {
-	Pos    lexer.Position
-	Name   string     `"@" @Ident`
-	Values []*Literal `"(" [ @@ { "," @@ } ] ")"`
-}
-
-type CompilerFunc struct {
-	Pos               lexer.Position
-	Start             string           `@NewLine`
-	Name              string           `@Ident ":"`
-	Parameters        []*FuncParameter `[ @@ { "," @@ } ]`
-	ReturnTypes       []string         `"-"">" [ @Ident { "," @Ident } ] @NewLine`
-	CompilerIntrinsic string           `"__compiler__gen__"`
-	End               *string          `@NewLine`
-}
-
-type FunDecl struct {
-	Pos               lexer.Position
-	Start             string           `@NewLine`
-	Name              string           `@Ident "="`
-	Parameters        []*FuncParameter `[ @@ { "," @@ } ]`
-	ReturnTypes       []string         `"-"">" [ @Ident { "," @Ident } ] @NewLine`
-	Body              []*Block         `{ @@ }`
-	CompilerIntrinsic string           `| "__compiler__gen__"`
-	End               *string          `@NewLine`
-}
-
-type Fun struct {
-	Pos       lexer.Position
-	Decorator *DecoratorDecl `{ @@ }`
-	Fun       *FunDecl       `{ @@ }`
+	Name string `":" @Ident`
 }
 
 type Block struct {
@@ -199,6 +97,12 @@ type XmlDecl struct {
 	Children   []*XmlDecl     `{ @@ }`
 	Value      string         `{ @Ident }` // Todo make this match with @String or Literal
 	Close      string         `"<""/"@Ident">"`
+}
+
+type KeyValue struct {
+	Pos   lexer.Position
+	Key   string   `@Ident`
+	Value *Literal `"=" @@`
 }
 
 type AssignmentStatement struct {
@@ -289,7 +193,8 @@ type Literal struct {
 	Pos       lexer.Position
 	Nil       bool        `@"nil"`
 	Str       *string     `| @String`
-	Num       *float64    `| @(Float | Int)`
+	Int       *int        `| @Int`
+	Float     *float32    `| @Float`
 	Bool      *string     `| @( "true" | "false" )`
 	Reference *string     `| @Ident { @"." @Ident }`
 	List      []*Literal  `| "[" { @@ [ "," ] } "]"`
@@ -338,6 +243,36 @@ type Literal struct {
 // 	return fmt.Sprintf("%v: %v", m.Key, m.Value)
 // }
 
-func CheckAst(ast *Ast) []error {
-	return nil
+// type CommentStatement struct {
+// 	Pos  lexer.Position
+// 	Text string `@Comment`
+// }
+
+var parser = participle.MustBuild(&Ast{},
+	participle.Lexer(DefaultDefinition),
+)
+
+func ParseFile(filename string) (*Ast, error) {
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+	tree := &Ast{}
+	err = parser.ParseBytes(data, tree)
+	if err != nil {
+		return nil, err
+	}
+	for _, p := range tree.Modules {
+		for _, imp := range p.Imports {
+			parts := strings.Split(imp.Url, "/")
+			moduleName := parts[len(parts)-1]
+			println(moduleName)
+			subTree, err := ParseFile("../examples/" + moduleName + ".yum")
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse module: %s -> %v", moduleName, err)
+			}
+			tree.Modules = append(subTree.Modules, tree.Modules...)
+		}
+	}
+	return tree, nil
 }

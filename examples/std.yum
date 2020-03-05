@@ -17,3 +17,28 @@ println data: string = ->
 println("1233435")
 
 println("${a} ${b}")
+
+// type int      = i32
+// type float    = f32
+// type string   = object
+//     ptr: int
+//     length: int
+//    data: []int
+
+proc _start = ->
+  add(1, 2)
+  add(1, 2)
+  add(1, 2)
+  add(1, 2)
+  add(1, 2)
+  add(1, 2)
+  fd_write(1, "hello world", 1, 20)
+  fd_write(1, "hello world", 1, 20)
+  fd_write(1, "hello world", 1, 20)
+  fd_write(1, "sqdasd", 1, 20)
+
+proc add(a: int, b: int) -> =
+
+extern add(a: int, b: int) -> =
+
+method add(a: int, b: int) -> =

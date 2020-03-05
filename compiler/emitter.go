@@ -10,11 +10,6 @@ import (
 	"github.com/alecthomas/repr"
 )
 
-var typeMap = map[string]byte{
-	"num": op.F64,
-	"i32": op.I32,
-}
-
 type FuncData struct {
 	Index      int
 	Name       string
@@ -29,6 +24,10 @@ type FuncParam struct {
 	ptr   int
 }
 
+type TypeData struct {
+	Value string
+}
+
 type Emitter struct {
 	TypesSection     *bytes.Buffer
 	ImportsSection   *bytes.Buffer
@@ -39,6 +38,8 @@ type Emitter struct {
 	FuncsBodySection *bytes.Buffer
 	Tree             *Ast
 	funcs            map[string]*FuncData
+	types            map[string]*TypeData
+	typeOpCode       map[string]byte
 	externFuncsCount int
 	funcsCount       int
 	globalsCount     int
@@ -55,6 +56,18 @@ func NewEmitter(tree *Ast) *Emitter {
 		ExportsSection:   bytes.NewBuffer(nil),
 		FuncsBodySection: bytes.NewBuffer(nil),
 		funcs:            map[string]*FuncData{},
+		types: map[string]*TypeData{
+			"int": &TypeData{ // type int i32
+				Value: "i32",
+			},
+			"float": &TypeData{ // type float f32
+				Value: "f32",
+			},
+		},
+		typeOpCode: map[string]byte{
+			"i32": op.I32,
+			"f32": op.F64,
+		},
 		Tree:             tree,
 		externFuncsCount: 0,
 		funcsCount:       0,
@@ -67,23 +80,30 @@ func (e *Emitter) EmitTypes(name string) error {
 	e.TypesSection.WriteByte(0x60)                  // type func
 	e.TypesSection.WriteByte(byte(len(fun.Params))) // num params
 	for _, param := range fun.Params {              // i32, i32
-		t, ok := typeMap[param.Type]
+		t, ok := e.types[param.Type]
 		if !ok {
 			return fmt.Errorf("func'" + fun.Name + "' parameter '" + param.Name + "' type '" + param.Type + "' does not exist")
 		}
-		e.TypesSection.WriteByte(t)
+		opCode, ok := e.typeOpCode[t.Value]
+		if !ok {
+			return fmt.Errorf("func'" + fun.Name + "' parameter '" + param.Name + "' opcode does not exist")
+		}
+		e.TypesSection.WriteByte(opCode)
 	}
 	if fun.ReturnType != "" {
-		t, ok := typeMap[fun.ReturnType]
+		t, ok := e.types[fun.ReturnType]
 		if !ok {
 			return fmt.Errorf("func'" + fun.Name + "' return type '" + fun.ReturnType + "' does not exist")
 		}
+		opCode, ok := e.typeOpCode[t.Value]
+		if !ok {
+			return fmt.Errorf("func'" + fun.Name + "' return type '" + fun.ReturnType + "' opcode does not exist")
+		}
 		e.TypesSection.WriteByte(0x01) // num results
-		e.TypesSection.WriteByte(t)    // i32
+		e.TypesSection.WriteByte(opCode)
 	} else {
 		e.TypesSection.WriteByte(0x00) // num results
 	}
-	// panic(repr.String(buffer.Bytes()))
 	return nil
 }
 
@@ -131,24 +151,37 @@ func (e *Emitter) EmitFuncBody(name string, body []*Block) error {
 }
 
 func (e *Emitter) emitExpression(buffer *bytes.Buffer, funcName string, operation *string, l *Literal, r *Expression) error {
-	if l != nil && l.Num != nil {
-		buffer.WriteByte(op.F64_CONST)
-		buffer.Write(float64ToByte(*l.Num))
-	}
-	if l != nil && l.Str != nil {
-		// (i32.store (i32.const 0) (i32.const 8))  ;; iov.iov_base - This is a pointer to the start of the 'hello world\n' string
-		// (i32.store (i32.const 4) (i32.const 12))  ;; iov.iov_len - The length of the 'hello world\n' string
-		// (i32.store (i32.const 8) (i32.const 0x6c6c6568))
-		// (i32.store (i32.const 12) (i32.const 0x6f77206f))
-		// (i32.store (i32.const 16) (i32.const 0x0a646c72))
-		// buffer.WriteByte(op.I32_CONST)
-		// buffer.WriteByte(byte(0))
+	if l != nil {
+		if l.Int != nil {
+			buffer.WriteByte(op.I32_CONST)
+			encodeSleb128(buffer, int32(*l.Int))
+		}
+		if l.Float != nil {
+			buffer.WriteByte(op.F32_CONST)
+			buffer.Write(float32ToByte(*l.Float))
+		}
+		if l.Str != nil {
+			// (i32.store (i32.const 0) (i32.const 8))  ;; iov.iov_base - This is a pointer to the start of the 'hello world\n' string
+			// (i32.store (i32.const 4) (i32.const 12))  ;; iov.iov_len - The length of the 'hello world\n' string
+			// (i32.store (i32.const 8) (i32.const 0x6c6c6568))
+			// (i32.store (i32.const 12) (i32.const 0x6f77206f))
+			// (i32.store (i32.const 16) (i32.const 0x0a646c72))
+			// buffer.WriteByte(op.I32_CONST)
+			// buffer.WriteByte(byte(0))
+		}
 	}
 	// TODO: remove r
-	if r != nil && r.Left != nil && r.Left.Num != nil {
-		buffer.WriteByte(op.F64_CONST)
-		buffer.Write(float64ToByte(*r.Left.Num))
-		e.emitOperation(buffer, funcName, *operation)
+	if r != nil && r.Left != nil {
+		if r.Left.Int != nil {
+			buffer.WriteByte(op.I32_CONST)
+			encodeSleb128(buffer, int32(*r.Left.Int))
+			e.emitOperation(buffer, funcName, *operation, "int")
+		}
+		if r.Left.Float != nil {
+			buffer.WriteByte(op.F32_CONST)
+			buffer.Write(float32ToByte(*r.Left.Float))
+			e.emitOperation(buffer, funcName, *operation, "float")
+		}
 	}
 	if l != nil && l.Reference != nil {
 		if operation != nil {
@@ -188,15 +221,13 @@ func (e *Emitter) emitExpression(buffer *bytes.Buffer, funcName string, operatio
 				}
 				for _, p := range callFunc.Params {
 					if i == p.Index {
-						if v.Num != nil {
-							// specific case for i32 which is used for external funcs which have i32 as parameters
-							if p.Type == "i32" {
-								buffer.WriteByte(op.I32_CONST)
-								buffer.WriteByte(byte(int32(*v.Num)))
-							} else {
-								buffer.WriteByte(op.F64_CONST)
-								buffer.Write(float64ToByte(*v.Num))
-							}
+						if v.Int != nil {
+							buffer.WriteByte(op.I32_CONST)
+							encodeSleb128(buffer, int32(*v.Int))
+						}
+						if v.Float != nil {
+							buffer.WriteByte(op.F32_CONST)
+							buffer.Write(float32ToByte(*v.Float))
 						}
 						if v.Str != nil {
 							buffer.WriteByte(op.I32_CONST)
@@ -223,7 +254,7 @@ func (e *Emitter) emitExpression(buffer *bytes.Buffer, funcName string, operatio
 		}
 		buffer.WriteByte(op.GET_LOCAL)
 		buffer.WriteByte(byte(ref.Index))
-		e.emitOperation(buffer, funcName, *operation)
+		e.emitOperation(buffer, funcName, *operation, ref.Type)
 	}
 	if r != nil && r.Operator != nil {
 		err := e.emitExpression(buffer, funcName, r.Operator, nil, r.Right)
@@ -234,30 +265,36 @@ func (e *Emitter) emitExpression(buffer *bytes.Buffer, funcName string, operatio
 	return nil
 }
 
-// class String
-//   ptr: i32
-//   length: i32
-
-//   init = ->
-
-//   ptr = a: string -> i32
-//     (i32.store (i32.const 0) (i32.const 8)) // iov.iov_base - This is a pointer to the start of the 'hello world\n' string
-
-//   _length = a: string -> i32
-//     (i32.store (i32.const 4) (i32.const 12)) // iov.iov_len - The length of the 'hello world\n' string
-
-func (e *Emitter) emitOperation(buffer *bytes.Buffer, funcName, operation string) error {
-	switch operation {
-	case "+":
-		buffer.WriteByte(op.F64_ADD)
-	case "-":
-		buffer.WriteByte(op.F64_SUB)
-	case "*":
-		buffer.WriteByte(op.F64_MUL)
-	case "/":
-		buffer.WriteByte(op.F64_DIV)
+func (e *Emitter) emitOperation(buffer *bytes.Buffer, funcName, operation, ttype string) error {
+	switch ttype {
+	case "int":
+		switch operation {
+		case "+":
+			buffer.WriteByte(op.I32_ADD)
+		case "-":
+			buffer.WriteByte(op.I32_SUB)
+		case "*":
+			buffer.WriteByte(op.I32_MUL)
+		case "/":
+			buffer.WriteByte(op.I32_DIV)
+		default:
+			return fmt.Errorf("func '%s' operation '%s' is invalid for '%s'", funcName, operation, ttype)
+		}
+	case "float":
+		switch operation {
+		case "+":
+			buffer.WriteByte(op.F64_ADD)
+		case "-":
+			buffer.WriteByte(op.F64_SUB)
+		case "*":
+			buffer.WriteByte(op.F64_MUL)
+		case "/":
+			buffer.WriteByte(op.F64_DIV)
+		default:
+			return fmt.Errorf("func '%s' operation '%s' is invalid for '%s'", funcName, operation, ttype)
+		}
 	default:
-		return fmt.Errorf("func '%s' operation '%s' is invalid", funcName, operation)
+		return fmt.Errorf("func '%s' operation '%s' is invalid for '%s'", funcName, operation, ttype)
 	}
 	return nil
 }
@@ -343,38 +380,39 @@ func (e *Emitter) EmitAll() (*bytes.Buffer, error) {
 	e.EmitMemory()
 	e.EmitRuntime()
 
-	for _, p := range e.Tree.Modules {
-		for _, a := range p.ExternFuncs {
-			e.funcs[a.Name] = &FuncData{
-				Index:      e.externFuncsCount,
-				Name:       a.Name,
-				Params:     map[string]*FuncParam{},
-				ReturnType: a.ReturnType,
+	for _, module := range e.Tree.Modules {
+		for _, t := range module.Types {
+			e.types[t.Name] = &TypeData{
+				Value: t.Alias,
 			}
-			for pi, param := range a.Parameters {
-				e.funcs[a.Name].Params[param.Name] = &FuncParam{
-					Index: pi,
-					Name:  param.Name,
-					Type:  param.Type.Name,
-				}
-			}
-			err := e.EmitTypes(a.Name)
-			if err != nil {
-				return nil, fmt.Errorf("Failed to emitTypes %v", err)
-			}
-			e.EmitImports(p.Name, a.Name, e.externFuncsCount)
-			e.externFuncsCount += 1
 		}
-		for _, fun := range p.Funs {
-			returnType := ""
-			if len(fun.ReturnTypes) > 1 {
-				returnType = fun.ReturnTypes[0]
-			}
+		// for _, a := range p.ExternFuncs {
+		// 	e.funcs[a.Name] = &FuncData{
+		// 		Index:      e.externFuncsCount,
+		// 		Name:       a.Name,
+		// 		Params:     map[string]*FuncParam{},
+		// 		ReturnType: a.ReturnType,
+		// 	}
+		// 	for pi, param := range a.Parameters {
+		// 		e.funcs[a.Name].Params[param.Name] = &FuncParam{
+		// 			Index: pi,
+		// 			Name:  param.Name,
+		// 			Type:  param.Type.Name,
+		// 		}
+		// 	}
+		// 	err := e.EmitTypes(a.Name)
+		// 	if err != nil {
+		// 		return nil, fmt.Errorf("Failed to emitTypes %v", err)
+		// 	}
+		// e.EmitImports(p.Name, a.Name, e.externFuncsCount)
+		// e.externFuncsCount += 1
+		// }
+		for i, fun := range module.Functions {
 			e.funcs[fun.Name] = &FuncData{
-				Index:      e.externFuncsCount + e.funcsCount,
+				Index:      i,
 				Name:       fun.Name,
 				Params:     map[string]*FuncParam{},
-				ReturnType: returnType,
+				ReturnType: fun.ReturnType,
 			}
 			for pi, param := range fun.Parameters {
 				e.funcs[fun.Name].Params[param.Name] = &FuncParam{
@@ -387,18 +425,20 @@ func (e *Emitter) EmitAll() (*bytes.Buffer, error) {
 			if err != nil {
 				return nil, fmt.Errorf("Failed to emitTypes %v", err)
 			}
+			if fun.Type == "extern" {
+				e.EmitImports(module.Name, fun.Name, e.externFuncsCount)
+				e.externFuncsCount += 1
+			}
 			e.EmitFuncs(fun.Name, e.externFuncsCount+e.funcsCount) // function 0 signature index
 
 			err = e.EmitFuncBody(fun.Name, fun.Body)
 			if err != nil {
 				return nil, fmt.Errorf("Failed to EmitFuncBody %v", err)
 			}
-			// if fnIndex == 1 {
-			// 	return nil, fmt.Errorf(fmt.Sprintf("%+v", funcbody.Bytes()))
-			// }
 			e.funcsCount += 1
 		}
 	}
+	repr.Println(e.types)
 	repr.Println(e.funcs)
 	buffer.Write([]byte{op.SECTION_TYPES, byte(e.TypesSection.Len() + 1), byte(e.externFuncsCount + e.funcsCount)}) // Type section code, section size, num types, type data
 	buffer.Write(e.TypesSection.Bytes())

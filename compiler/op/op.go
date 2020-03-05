@@ -10,6 +10,9 @@ const SECTION_FUNCS_BODY = 0x0a
 
 const I32 = 0x7f
 const I32_ADD = 0x6a
+const I32_SUB = 0x6b
+const I32_MUL = 0x6c
+const I32_DIV = 0x6d
 const F64 = 0x7c
 const F64_ADD = 0xa0
 const F64_SUB = 0xa1

@@ -23,24 +23,24 @@ func TestCode(t *testing.T) {
 			wasmFileName := strings.Replace(fileName, ".yum", ".wasm", 1)
 			file, err := os.Create("./.snapshots/" + wasmFileName)
 			if err != nil {
-				panic(err)
+				require.NoError(t, err)
 			}
 			defer file.Close()
 			data, err := NewEmitter(ast).EmitAll()
 			if err != nil {
-				panic(err)
+				require.NoError(t, err)
 			}
 			io.Copy(file, bytes.NewBuffer(data.Bytes()))
 			instance, err := wasm.NewInstance(data.Bytes())
 			if err != nil {
-				panic(err)
+				require.NoError(t, err)
 			}
 			defer instance.Close()
 
 			mainFunc := instance.Exports["main"]
 			result, err := mainFunc()
 			if err != nil {
-				panic(err)
+				require.NoError(t, err)
 			}
 			assert.Equal(t, "void", result.String())
 		})

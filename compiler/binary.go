@@ -20,6 +20,15 @@ func encodeSleb128(b *bytes.Buffer, v int32) {
 	}
 }
 
+func float32ToByte(f float32) []byte {
+	var buf bytes.Buffer
+	err := binary.Write(&buf, binary.LittleEndian, f)
+	if err != nil {
+		panic("binary.Write failed: " + err.Error())
+	}
+	return buf.Bytes()
+}
+
 func float64ToByte(f float64) []byte {
 	var buf bytes.Buffer
 	err := binary.Write(&buf, binary.LittleEndian, f)
