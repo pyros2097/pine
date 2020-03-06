@@ -15,7 +15,7 @@ import (
 var testCases = []string{
 	// "basic.pony",
 	// "index.yum",
-	"main.yum",
+	// "main.yum",
 }
 
 func TestAst(t *testing.T) {

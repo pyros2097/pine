@@ -15,19 +15,25 @@ type Ast struct {
 }
 
 type Module struct {
-	Pos       lexer.Position
-	Name      string      `"module" @Ident`
-	End       *string     `@NewLine`
-	Imports   []*Import   `{ @@ }`
-	Types     []*Type     `{ @@ }`
-	Functions []*Function `{ @@ }`
+	Pos             lexer.Position
+	Name            string          `"module" @Ident`
+	End             string          `@NewLine`
+	ImportSection   ImportSection   `{ @@ }`
+	TypeSection     TypeSection     `{ @@ }`
+	FunctionSection FunctionSection `{ @@ }`
+}
+
+type ImportSection struct {
+	Pos     lexer.Position
+	Start   *string   `@NewLine`
+	Imports []*Import `{ @@ }`
+	End     *string   `@NewLine`
 }
 
 type Import struct {
-	Pos   lexer.Position
-	Start *string `@NewLine`
-	Url   string  `"import" @String`
-	End   *string `@NewLine`
+	Pos lexer.Position
+	Url string  `"import" @String`
+	End *string `@NewLine`
 }
 
 // type Fun struct {
@@ -42,24 +48,36 @@ type Import struct {
 // 	Values []*Literal `"(" [ @@ { "," @@ } ] ")"`
 // }
 
+type TypeSection struct {
+	Pos   lexer.Position
+	Start *string `@NewLine`
+	Types []*Type `{ @@ }`
+	End   *string `@NewLine`
+}
+
 type Type struct {
 	Pos   lexer.Position
-	Start string `@NewLine`
 	Name  string `"type" @Ident`
 	Alias string `@Ident`
 	End   string `@NewLine`
 }
 
+type FunctionSection struct {
+	Pos       lexer.Position
+	Start     *string     `@NewLine`
+	Functions []*Function `{ @@ }`
+	End       *string     `@NewLine`
+}
+
 type Function struct {
 	Pos        lexer.Position
-	Start      string          `@NewLine`
-	Type       string          `@("extern" | "proc" | "method")`
-	Name       string          `@Ident`
-	Parameters []FuncParameter `"(" [ @@ { "," @@ } ] ")"`
-	ReturnType string          `"-"">" { @Ident }`
-	EndReturn  string          `@NewLine`
-	Body       []*Block        `{ @@ }`
-	End        string          `@NewLine`
+	Type       string             `@("extern" | "proc" | "method")`
+	Name       string             `@Ident`
+	Parameters []FuncParameter    `"(" [ @@ { "," @@ } ] ")"`
+	ReturnType *FuncParameterType `{ @@ }`
+	EndReturn  string             `"=" @NewLine`
+	Body       []*Block           `{ @@ }`
+	End        string             `@NewLine`
 }
 
 type FuncParameter struct {
@@ -71,6 +89,11 @@ type FuncParameter struct {
 type FuncParameterType struct {
 	Pos  lexer.Position
 	Name string `":" @Ident`
+}
+
+type BlockSection struct {
+	Exp *Expression `@@`
+	End *string     `@NewLine`
 }
 
 type Block struct {
@@ -263,7 +286,7 @@ func ParseFile(filename string) (*Ast, error) {
 		return nil, err
 	}
 	for _, p := range tree.Modules {
-		for _, imp := range p.Imports {
+		for _, imp := range p.ImportSection.Imports {
 			parts := strings.Split(imp.Url, "/")
 			moduleName := parts[len(parts)-1]
 			println(moduleName)

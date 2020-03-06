@@ -381,7 +381,7 @@ func (e *Emitter) EmitAll() (*bytes.Buffer, error) {
 	e.EmitRuntime()
 
 	for _, module := range e.Tree.Modules {
-		for _, t := range module.Types {
+		for _, t := range module.TypeSection.Types {
 			e.types[t.Name] = &TypeData{
 				Value: t.Alias,
 			}
@@ -404,15 +404,15 @@ func (e *Emitter) EmitAll() (*bytes.Buffer, error) {
 		// 	if err != nil {
 		// 		return nil, fmt.Errorf("Failed to emitTypes %v", err)
 		// 	}
-		// e.EmitImports(p.Name, a.Name, e.externFuncsCount)
-		// e.externFuncsCount += 1
+		// 	e.EmitImports(p.Name, a.Name, e.externFuncsCount)
+		// 	e.externFuncsCount += 1
 		// }
-		for i, fun := range module.Functions {
+		for i, fun := range module.FunctionSection.Functions {
 			e.funcs[fun.Name] = &FuncData{
 				Index:      i,
 				Name:       fun.Name,
 				Params:     map[string]*FuncParam{},
-				ReturnType: fun.ReturnType,
+				ReturnType: fun.ReturnType.Name,
 			}
 			for pi, param := range fun.Parameters {
 				e.funcs[fun.Name].Params[param.Name] = &FuncParam{
