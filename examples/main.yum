@@ -1,7 +1,7 @@
 module main
 
 proc add(a: int, b: int) -> int
-  a + b + 4
+  a + b
 
 
 proc main() ->

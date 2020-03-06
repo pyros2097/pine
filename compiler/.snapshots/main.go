@@ -44,13 +44,6 @@
                     Pos: Position{Filename: "", Offset: 51, Line: 4, Column: 7},
                     Reference: &"b",
                   },
-                  Operator: &"+",
-                  Right: &compiler.Expression{
-                    Left: &compiler.Literal{
-                      Pos: Position{Filename: "", Offset: 55, Line: 4, Column: 11},
-                      Int: &4,
-                    },
-                  },
                 },
               },
               End: &"\n",
@@ -59,7 +52,7 @@
           End: "\n",
         },
         &compiler.Function{
-          Pos: Position{Filename: "", Offset: 58, Line: 6, Column: 1},
+          Pos: Position{Filename: "", Offset: 54, Line: 6, Column: 1},
           Start: "\n",
           Type: "proc",
           Name: "main",
@@ -68,19 +61,19 @@
             &compiler.Block{
               Exp: &compiler.Expression{
                 Left: &compiler.Literal{
-                  Pos: Position{Filename: "", Offset: 76, Line: 8, Column: 3},
+                  Pos: Position{Filename: "", Offset: 72, Line: 8, Column: 3},
                   Reference: &"add",
                 },
                 Right: &compiler.Expression{
                   Left: &compiler.Literal{
-                    Pos: Position{Filename: "", Offset: 79, Line: 8, Column: 6},
+                    Pos: Position{Filename: "", Offset: 75, Line: 8, Column: 6},
                     Params: []*compiler.Literal{
                       &compiler.Literal{
-                        Pos: Position{Filename: "", Offset: 80, Line: 8, Column: 7},
+                        Pos: Position{Filename: "", Offset: 76, Line: 8, Column: 7},
                         Int: &1,
                       },
                       &compiler.Literal{
-                        Pos: Position{Filename: "", Offset: 83, Line: 8, Column: 10},
+                        Pos: Position{Filename: "", Offset: 79, Line: 8, Column: 10},
                         Int: &3,
                       },
                     },
@@ -92,19 +85,19 @@
             &compiler.Block{
               Exp: &compiler.Expression{
                 Left: &compiler.Literal{
-                  Pos: Position{Filename: "", Offset: 88, Line: 9, Column: 3},
+                  Pos: Position{Filename: "", Offset: 84, Line: 9, Column: 3},
                   Reference: &"add",
                 },
                 Right: &compiler.Expression{
                   Left: &compiler.Literal{
-                    Pos: Position{Filename: "", Offset: 91, Line: 9, Column: 6},
+                    Pos: Position{Filename: "", Offset: 87, Line: 9, Column: 6},
                     Params: []*compiler.Literal{
                       &compiler.Literal{
-                        Pos: Position{Filename: "", Offset: 92, Line: 9, Column: 7},
+                        Pos: Position{Filename: "", Offset: 88, Line: 9, Column: 7},
                         Int: &1,
                       },
                       &compiler.Literal{
-                        Pos: Position{Filename: "", Offset: 95, Line: 9, Column: 10},
+                        Pos: Position{Filename: "", Offset: 91, Line: 9, Column: 10},
                         Int: &3,
                       },
                     },
@@ -116,19 +109,19 @@
             &compiler.Block{
               Exp: &compiler.Expression{
                 Left: &compiler.Literal{
-                  Pos: Position{Filename: "", Offset: 100, Line: 10, Column: 3},
+                  Pos: Position{Filename: "", Offset: 96, Line: 10, Column: 3},
                   Reference: &"add",
                 },
                 Right: &compiler.Expression{
                   Left: &compiler.Literal{
-                    Pos: Position{Filename: "", Offset: 103, Line: 10, Column: 6},
+                    Pos: Position{Filename: "", Offset: 99, Line: 10, Column: 6},
                     Params: []*compiler.Literal{
                       &compiler.Literal{
-                        Pos: Position{Filename: "", Offset: 104, Line: 10, Column: 7},
+                        Pos: Position{Filename: "", Offset: 100, Line: 10, Column: 7},
                         Int: &1,
                       },
                       &compiler.Literal{
-                        Pos: Position{Filename: "", Offset: 107, Line: 10, Column: 10},
+                        Pos: Position{Filename: "", Offset: 103, Line: 10, Column: 10},
                         Int: &3,
                       },
                     },
@@ -140,19 +133,19 @@
             &compiler.Block{
               Exp: &compiler.Expression{
                 Left: &compiler.Literal{
-                  Pos: Position{Filename: "", Offset: 112, Line: 11, Column: 3},
+                  Pos: Position{Filename: "", Offset: 108, Line: 11, Column: 3},
                   Reference: &"add",
                 },
                 Right: &compiler.Expression{
                   Left: &compiler.Literal{
-                    Pos: Position{Filename: "", Offset: 115, Line: 11, Column: 6},
+                    Pos: Position{Filename: "", Offset: 111, Line: 11, Column: 6},
                     Params: []*compiler.Literal{
                       &compiler.Literal{
-                        Pos: Position{Filename: "", Offset: 116, Line: 11, Column: 7},
+                        Pos: Position{Filename: "", Offset: 112, Line: 11, Column: 7},
                         Int: &1,
                       },
                       &compiler.Literal{
-                        Pos: Position{Filename: "", Offset: 119, Line: 11, Column: 10},
+                        Pos: Position{Filename: "", Offset: 115, Line: 11, Column: 10},
                         Int: &3,
                       },
                     },
@@ -164,19 +157,19 @@
             &compiler.Block{
               Exp: &compiler.Expression{
                 Left: &compiler.Literal{
-                  Pos: Position{Filename: "", Offset: 124, Line: 12, Column: 3},
+                  Pos: Position{Filename: "", Offset: 120, Line: 12, Column: 3},
                   Reference: &"add",
                 },
                 Right: &compiler.Expression{
                   Left: &compiler.Literal{
-                    Pos: Position{Filename: "", Offset: 127, Line: 12, Column: 6},
+                    Pos: Position{Filename: "", Offset: 123, Line: 12, Column: 6},
                     Params: []*compiler.Literal{
                       &compiler.Literal{
-                        Pos: Position{Filename: "", Offset: 128, Line: 12, Column: 7},
+                        Pos: Position{Filename: "", Offset: 124, Line: 12, Column: 7},
                         Int: &1,
                       },
                       &compiler.Literal{
-                        Pos: Position{Filename: "", Offset: 131, Line: 12, Column: 10},
+                        Pos: Position{Filename: "", Offset: 127, Line: 12, Column: 10},
                         Int: &3,
                       },
                     },
@@ -188,19 +181,19 @@
             &compiler.Block{
               Exp: &compiler.Expression{
                 Left: &compiler.Literal{
-                  Pos: Position{Filename: "", Offset: 136, Line: 13, Column: 3},
+                  Pos: Position{Filename: "", Offset: 132, Line: 13, Column: 3},
                   Reference: &"add",
                 },
                 Right: &compiler.Expression{
                   Left: &compiler.Literal{
-                    Pos: Position{Filename: "", Offset: 139, Line: 13, Column: 6},
+                    Pos: Position{Filename: "", Offset: 135, Line: 13, Column: 6},
                     Params: []*compiler.Literal{
                       &compiler.Literal{
-                        Pos: Position{Filename: "", Offset: 140, Line: 13, Column: 7},
+                        Pos: Position{Filename: "", Offset: 136, Line: 13, Column: 7},
                         Int: &1,
                       },
                       &compiler.Literal{
-                        Pos: Position{Filename: "", Offset: 143, Line: 13, Column: 10},
+                        Pos: Position{Filename: "", Offset: 139, Line: 13, Column: 10},
                         Int: &3,
                       },
                     },

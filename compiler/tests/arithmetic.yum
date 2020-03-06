@@ -1,0 +1,25 @@
+module main
+
+proc addFloatRef(a: float, b: float) -> float
+  a + b
+
+
+proc addIntRef(a: int, b: int) -> int
+  a + b
+
+
+proc addInt() -> int
+  5 + 3
+
+
+proc subInt() -> int
+  5 - 3
+
+
+proc mulInt() -> int
+  5 * 3
+
+
+proc divInt() -> int
+  5 / 3
+

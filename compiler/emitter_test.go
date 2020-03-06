@@ -9,8 +9,44 @@ import (
 
 	"github.com/alecthomas/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/wasmerio/go-ext-wasm/wasmer"
 	wasm "github.com/wasmerio/go-ext-wasm/wasmer"
 )
+
+func loadFile(t *testing.T, fileName string) wasmer.Instance {
+	ast, err := ParseFile("./tests/" + fileName)
+	if err != nil {
+		require.NoError(t, err)
+	}
+	data, err := NewEmitter(ast).EmitAll()
+	if err != nil {
+		require.NoError(t, err)
+	}
+	instance, err := wasm.NewInstance(data.Bytes())
+	if err != nil {
+		require.NoError(t, err)
+	}
+	return instance
+}
+
+func TestArithmetic(t *testing.T) {
+	instance := loadFile(t, "arithmetic.yum")
+	defer instance.Close()
+
+	result, err := instance.Exports["addIntRef"](1, 2)
+	if err != nil {
+		require.NoError(t, err)
+	}
+	assert.Equal(t, "3", result.String())
+	results := []string{"8", "2", "15", "1"}
+	for i, fn := range []string{"addInt", "subInt", "mulInt", "divInt"} {
+		result, err = instance.Exports[fn]()
+		if err != nil {
+			require.NoError(t, err)
+		}
+		assert.Equal(t, results[i], result.String())
+	}
+}
 
 func TestCode(t *testing.T) {
 	assert.NoError(t, os.Setenv("UPDATE_SNAPSHOTS", "true"))
