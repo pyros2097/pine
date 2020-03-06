@@ -36,7 +36,7 @@ type Emitter struct {
 	GlobalsSection   *bytes.Buffer
 	ExportsSection   *bytes.Buffer
 	FuncsBodySection *bytes.Buffer
-	Tree             *Ast
+	Module           *Module
 	funcs            map[string]*FuncData
 	types            map[string]*TypeData
 	typeOpCode       map[string]byte
@@ -46,7 +46,7 @@ type Emitter struct {
 	initial          bool
 }
 
-func NewEmitter(tree *Ast) *Emitter {
+func NewEmitter(module *Module) *Emitter {
 	return &Emitter{
 		TypesSection:     bytes.NewBuffer(nil),
 		ImportsSection:   bytes.NewBuffer(nil),
@@ -68,7 +68,7 @@ func NewEmitter(tree *Ast) *Emitter {
 			"i32": op.I32,
 			"f32": op.F64,
 		},
-		Tree:             tree,
+		Module:           module,
 		externFuncsCount: 0,
 		funcsCount:       0,
 		initial:          false,
@@ -380,63 +380,40 @@ func (e *Emitter) EmitAll() (*bytes.Buffer, error) {
 	e.EmitMemory()
 	e.EmitRuntime()
 
-	for _, module := range e.Tree.Modules {
-		for _, t := range module.TypeSection.Types {
-			e.types[t.Name] = &TypeData{
-				Value: t.Alias,
+	for _, t := range e.Module.TypeSection.Types {
+		e.types[t.Name] = &TypeData{
+			Value: t.Alias,
+		}
+	}
+	for i, fun := range e.Module.FunctionSection.Functions {
+		e.funcs[fun.Name] = &FuncData{
+			Index:      i,
+			Name:       fun.Name,
+			Params:     map[string]*FuncParam{},
+			ReturnType: fun.ReturnType.Name,
+		}
+		for pi, param := range fun.Parameters {
+			e.funcs[fun.Name].Params[param.Name] = &FuncParam{
+				Index: pi,
+				Name:  param.Name,
+				Type:  param.Type.Name,
 			}
 		}
-		// for _, a := range p.ExternFuncs {
-		// 	e.funcs[a.Name] = &FuncData{
-		// 		Index:      e.externFuncsCount,
-		// 		Name:       a.Name,
-		// 		Params:     map[string]*FuncParam{},
-		// 		ReturnType: a.ReturnType,
-		// 	}
-		// 	for pi, param := range a.Parameters {
-		// 		e.funcs[a.Name].Params[param.Name] = &FuncParam{
-		// 			Index: pi,
-		// 			Name:  param.Name,
-		// 			Type:  param.Type.Name,
-		// 		}
-		// 	}
-		// 	err := e.EmitTypes(a.Name)
-		// 	if err != nil {
-		// 		return nil, fmt.Errorf("Failed to emitTypes %v", err)
-		// 	}
-		// 	e.EmitImports(p.Name, a.Name, e.externFuncsCount)
+		err := e.EmitTypes(fun.Name)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to emitTypes %v", err)
+		}
+		// if fun.Type == "extern" {
+		// 	e.EmitImports(module.Name, fun.Name, e.externFuncsCount)
 		// 	e.externFuncsCount += 1
 		// }
-		for i, fun := range module.FunctionSection.Functions {
-			e.funcs[fun.Name] = &FuncData{
-				Index:      i,
-				Name:       fun.Name,
-				Params:     map[string]*FuncParam{},
-				ReturnType: fun.ReturnType.Name,
-			}
-			for pi, param := range fun.Parameters {
-				e.funcs[fun.Name].Params[param.Name] = &FuncParam{
-					Index: pi,
-					Name:  param.Name,
-					Type:  param.Type.Name,
-				}
-			}
-			err := e.EmitTypes(fun.Name)
-			if err != nil {
-				return nil, fmt.Errorf("Failed to emitTypes %v", err)
-			}
-			if fun.Type == "extern" {
-				e.EmitImports(module.Name, fun.Name, e.externFuncsCount)
-				e.externFuncsCount += 1
-			}
-			e.EmitFuncs(fun.Name, e.externFuncsCount+e.funcsCount) // function 0 signature index
+		e.EmitFuncs(fun.Name, e.externFuncsCount+e.funcsCount) // function 0 signature index
 
-			err = e.EmitFuncBody(fun.Name, fun.Body)
-			if err != nil {
-				return nil, fmt.Errorf("Failed to EmitFuncBody %v", err)
-			}
-			e.funcsCount += 1
+		err = e.EmitFuncBody(fun.Name, fun.Body)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to EmitFuncBody %v", err)
 		}
+		e.funcsCount += 1
 	}
 	repr.Println(e.types)
 	repr.Println(e.funcs)

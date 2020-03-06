@@ -1,18 +1,12 @@
 package compiler
 
 import (
-	"fmt"
 	"io/ioutil"
 	"strings"
 
 	"github.com/alecthomas/participle"
 	"github.com/alecthomas/participle/lexer"
 )
-
-type Ast struct {
-	Pos     lexer.Position
-	Modules []*Module `{ @@ }`
-}
 
 type Module struct {
 	Pos             lexer.Position
@@ -92,8 +86,9 @@ type FuncParameterType struct {
 }
 
 type BlockSection struct {
-	Exp *Expression `@@`
-	End *string     `@NewLine`
+	Exp       *Expression `@@`
+	Statement *Statement  `| @@`
+	End       *string     `@NewLine`
 }
 
 type Block struct {
@@ -271,31 +266,29 @@ type Literal struct {
 // 	Text string `@Comment`
 // }
 
-var parser = participle.MustBuild(&Ast{},
+var parser = participle.MustBuild(&Module{},
 	participle.Lexer(DefaultDefinition),
 )
 
-func ParseFile(filename string) (*Ast, error) {
+func ParseFile(filename string) (*Module, error) {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
-	tree := &Ast{}
+	tree := &Module{}
 	err = parser.ParseBytes(data, tree)
 	if err != nil {
 		return nil, err
 	}
-	for _, p := range tree.Modules {
-		for _, imp := range p.ImportSection.Imports {
-			parts := strings.Split(imp.Url, "/")
-			moduleName := parts[len(parts)-1]
-			println(moduleName)
-			subTree, err := ParseFile("../examples/" + moduleName + ".yum")
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse module: %s -> %v", moduleName, err)
-			}
-			tree.Modules = append(subTree.Modules, tree.Modules...)
-		}
+	for _, imp := range tree.ImportSection.Imports {
+		parts := strings.Split(imp.Url, "/")
+		moduleName := parts[len(parts)-1]
+		println(moduleName)
+		// subTree, err := ParseFile("../examples/" + moduleName + ".yum")
+		// if err != nil {
+		// 	return nil, fmt.Errorf("failed to parse module: %s -> %v", moduleName, err)
+		// }
+		// tree.Modules = append(subTree.Modules, tree.Modules...)
 	}
 	return tree, nil
 }
