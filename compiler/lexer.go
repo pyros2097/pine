@@ -36,6 +36,8 @@ func (d *defaultDefinition) Symbols() map[string]rune {
 		"RawString": RawString,
 		"Comment":   Comment,
 		"NewLine":   NewLine,
+		"Indent":    Indent,
+		"Dedent":    Dedent,
 	}
 }
 
@@ -44,6 +46,7 @@ type textScannerLexer struct {
 	scanner  *Scanner
 	filename string
 	err      error
+	stack    int
 }
 
 // Lex an io.Reader with text/
@@ -96,6 +99,54 @@ func (t *textScannerLexer) Next() (lexer.Token, error) {
 	pos.Filename = t.filename
 	if t.err != nil {
 		return lexer.Token{}, t.err
+	}
+	// skip all whitespaces in between expressions/statements
+	if text == " " {
+		return t.Next()
+	}
+
+	// start looking at whitespaces that appear after a new line
+	if text == "\n" {
+		typ = t.scanner.Scan()
+		text = t.scanner.TokenText()
+		pos = lexer.Position(t.scanner.Position)
+		pos.Filename = t.filename
+		if text == " " {
+			typ = t.scanner.Scan()
+			text = t.scanner.TokenText()
+			pos = lexer.Position(t.scanner.Position)
+			pos.Filename = t.filename
+			if text == " " {
+				if t.stack == 2 {
+					// skip INDENT LEVEL 2
+					return t.Next()
+				}
+				t.stack += 2
+				return textScannerTransform(lexer.Token{
+					Type:  Indent,
+					Value: "III",
+					Pos:   pos,
+				})
+			} else {
+				return textScannerTransform(lexer.Token{
+					Type:  typ,
+					Value: text,
+					Pos:   pos,
+				})
+			}
+		} else {
+			if t.stack == 2 {
+				t.stack -= 2
+				return textScannerTransform(lexer.Token{
+					Type:  Dedent,
+					Value: "III",
+					Pos:   pos,
+				})
+			} else {
+				// skip \n
+				return t.Next()
+			}
+		}
 	}
 	return textScannerTransform(lexer.Token{
 		Type:  typ,

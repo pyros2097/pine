@@ -37,10 +37,10 @@ const validation: error = error("123")
 
 ```golang
 type Direction
-    | Left
-    | Right
-    | Up
-    | Down
+  | Left
+  | Right
+  | Up
+  | Down
 ```
 
 #### B. Types

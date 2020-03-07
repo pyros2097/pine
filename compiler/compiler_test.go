@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/wasmerio/go-ext-wasm/wasmer"
 	wasm "github.com/wasmerio/go-ext-wasm/wasmer"
 
 	"github.com/alecthomas/assert"
@@ -55,32 +54,13 @@ func TestSnapshotAll(t *testing.T) {
 				require.NoError(t, err)
 			}
 			defer instance.Close()
-			if filename == "arithmetic.yum" {
-				for _, v := range []struct {
-					name   string
-					left   interface{}
-					right  interface{}
-					result string
-				}{
-					{"addInt", nil, nil, "8"},
-					{"subInt", nil, nil, "2"},
-					{"mulInt", nil, nil, "15"},
-					{"divInt", nil, nil, "1"},
-					{"addIntRef", 1, 3, "4"},
-				} {
-					require.NotNil(t, instance.Exports[v.name])
-					var result wasmer.Value
-					var err error
-					if v.left != nil && v.right != nil {
-						result, err = instance.Exports[v.name](v.left, v.right)
-					} else {
-						result, err = instance.Exports[v.name]()
-					}
-					if err != nil {
-						require.NoError(t, err)
-					}
+			for _, fun := range ast.Functions {
+				if strings.HasPrefix(fun.Name, "test_") {
+					require.NotNil(t, instance.Exports[fun.Name])
+					result, err := instance.Exports[fun.Name]()
+					require.NoError(t, err)
 					require.NotNil(t, result)
-					assert.Equal(t, v.result, result.String())
+					assert.Equal(t, "void", result.String())
 				}
 			}
 		})

@@ -82,22 +82,22 @@ func (e *Emitter) EmitTypes(name string) error {
 	for _, param := range fun.Params {              // i32, i32
 		t, ok := e.types[param.Type]
 		if !ok {
-			return fmt.Errorf("func'" + fun.Name + "' parameter '" + param.Name + "' type '" + param.Type + "' does not exist")
+			return fmt.Errorf("function '" + fun.Name + "' parameter '" + param.Name + "' type '" + param.Type + "' does not exist")
 		}
 		opCode, ok := e.typeOpCode[t.Value]
 		if !ok {
-			return fmt.Errorf("func'" + fun.Name + "' parameter '" + param.Name + "' opcode does not exist")
+			return fmt.Errorf("function '" + fun.Name + "' parameter '" + param.Name + "' opcode does not exist")
 		}
 		e.TypesSection.WriteByte(opCode)
 	}
 	if fun.ReturnType != "" {
 		t, ok := e.types[fun.ReturnType]
 		if !ok {
-			return fmt.Errorf("func'" + fun.Name + "' return type '" + fun.ReturnType + "' does not exist")
+			return fmt.Errorf("function '" + fun.Name + "' return type '" + fun.ReturnType + "' does not exist")
 		}
 		opCode, ok := e.typeOpCode[t.Value]
 		if !ok {
-			return fmt.Errorf("func'" + fun.Name + "' return type '" + fun.ReturnType + "' opcode does not exist")
+			return fmt.Errorf("function '" + fun.Name + "' return type '" + fun.ReturnType + "' opcode does not exist")
 		}
 		e.TypesSection.WriteByte(0x01) // num results
 		e.TypesSection.WriteByte(opCode)
@@ -214,7 +214,7 @@ func (e *Emitter) emitExpression(buffer *bytes.Buffer, funcName string, operatio
 				if v.Reference != nil {
 					vref, ok := e.funcs[funcName].Params[*v.Reference]
 					if !ok {
-						return fmt.Errorf("func'" + funcName + "' trying to call '" + callFunc.Name + "' with non-existing variable " + *v.Reference)
+						return fmt.Errorf("function '" + funcName + "' trying to call '" + callFunc.Name + "' with non-existing variable " + *v.Reference)
 					}
 					buffer.WriteByte(op.GET_LOCAL)
 					buffer.WriteByte(byte(vref.Index))
@@ -250,7 +250,7 @@ func (e *Emitter) emitExpression(buffer *bytes.Buffer, funcName string, operatio
 	if r != nil && r.Left != nil && r.Left.Reference != nil {
 		ref, ok := e.funcs[funcName].Params[*r.Left.Reference]
 		if !ok {
-			return fmt.Errorf("func'" + funcName + "' parameter '" + *r.Left.Reference + "' does not exist")
+			return fmt.Errorf("function '" + funcName + "' parameter '" + *r.Left.Reference + "' does not exist")
 		}
 		buffer.WriteByte(op.GET_LOCAL)
 		buffer.WriteByte(byte(ref.Index))
@@ -385,12 +385,21 @@ func (e *Emitter) EmitAll() (*bytes.Buffer, error) {
 	// 		// Value: t.Alias,
 	// 	}
 	// }
-	for i, fun := range e.Module.FunctionSection.Functions {
+	for i, fun := range e.Module.Functions {
+		if fun.Type == "test" {
+			fun.Name = "test_" + fun.Name
+		}
+		_, exists := e.funcs[fun.Name]
+		if exists {
+			return nil, fmt.Errorf("Function '%s' is already defined", fun.Name)
+		}
 		e.funcs[fun.Name] = &FuncData{
-			Index:      i,
-			Name:       fun.Name,
-			Params:     map[string]*FuncParam{},
-			ReturnType: fun.ReturnType.Name,
+			Index:  i,
+			Name:   fun.Name,
+			Params: map[string]*FuncParam{},
+		}
+		if fun.ReturnType != nil {
+			e.funcs[fun.Name].ReturnType = fun.ReturnType.Name
 		}
 		for pi, param := range fun.Parameters {
 			e.funcs[fun.Name].Params[param.Name] = &FuncParam{

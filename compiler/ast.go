@@ -2,34 +2,23 @@ package compiler
 
 import (
 	"io/ioutil"
-	"strings"
 
 	"github.com/alecthomas/participle"
 	"github.com/alecthomas/participle/lexer"
 )
 
 type Module struct {
-	Pos             lexer.Position
-	Name            string          `"module" @Ident`
-	End             string          `@NewLine`
-	ImportSection   ImportSection   `{ @@ }`
-	AliasSection    AliasSection    `{ @@ }`
-	EnumSection     EnumSection     `{ @@ }`
-	TypeSection     TypeSection     `{ @@ }`
-	FunctionSection FunctionSection `{ @@ }`
+	Pos  lexer.Position
+	Name string `"module" @Ident`
+	// Imports []*Import `{ @@ }`
+	// Aliases         []*Alias        `{ @@ }`
+	Enums     []*Enum     `{ @@ }`
+	Types     []*Type     `{ @@ }`
+	Functions []*Function `{ @@ }`
 }
-
-type ImportSection struct {
-	Pos     lexer.Position
-	Start   *string   `@NewLine`
-	Imports []*Import `{ @@ }`
-	End     *string   `@NewLine`
-}
-
 type Import struct {
 	Pos lexer.Position
-	Url string  `"import" @String`
-	End *string `@NewLine`
+	Url string `"import" @String`
 }
 
 // type Fun struct {
@@ -44,76 +33,49 @@ type Import struct {
 // 	Values []*Literal `"(" [ @@ { "," @@ } ] ")"`
 // }
 
-type AliasSection struct {
-	Pos     lexer.Position
-	Start   *string  `@NewLine`
-	Aliases []*Alias `{ @@ }`
-	End     *string  `@NewLine`
-}
-
-type Alias struct {
-	Pos   lexer.Position
-	Name  string  `"type" @Ident`
-	Value *string `@Ident`
-	End   *string `@NewLine`
-}
-
-type EnumSection struct {
-	Pos   lexer.Position
-	Start *string `@NewLine`
-	Enums []*Enum `{ @@ }`
-	End   *string `@NewLine`
-}
+// type Alias struct {
+// 	Pos   lexer.Position
+// 	Name  string  `"type" @Ident`
+// 	Value *string `@Ident`
+// }
 
 type Enum struct {
 	Pos   lexer.Position
 	Name  string       `"enum" @Ident`
+	Start string       `@Indent`
 	Value []*EnumValue `[ @@ { @@ } ]`
-	End   *string      `@NewLine`
+	End   string       `@Dedent`
 }
 
 type EnumValue struct {
-	Pos   lexer.Position
-	Start string `@NewLine`
-	Name  string `"|" @Ident`
-}
-
-type TypeSection struct {
-	Pos   lexer.Position
-	Start *string `@NewLine`
-	Types []*Type `@@`
-	End   *string `@NewLine`
+	Pos  lexer.Position
+	Name string `"|" @Ident`
 }
 
 type Type struct {
 	Pos    lexer.Position
 	Name   string      `"type" @Ident`
+	Start  string      `@Indent`
 	Fields []TypeField `[ @@ { @@ } ]`
+	End    string      `@Dedent`
 }
 
 type TypeField struct {
 	Pos   lexer.Position
-	Start string `@NewLine`
 	Name  string `@Ident`
 	Value string `":" @Ident`
 }
 
-type FunctionSection struct {
-	Pos       lexer.Position
-	Start     *string     `@NewLine`
-	Functions []*Function `{ @@ }`
-	End       *string     `@NewLine`
-}
-
 type Function struct {
 	Pos        lexer.Position
-	Type       string             `@("extern" | "proc" | "method")`
+	Type       string             `@("extern" | "proc" | "method" | "test")`
 	Name       string             `@Ident`
-	Parameters []FuncParameter    `"(" [ @@ { "," @@ } ] ")"`
+	Parameters []FuncParameter    `"(" [ @@ { ","  @@ } ] ")"`
 	ReturnType *FuncParameterType `{ @@ }`
-	EndReturn  string             `"=" @NewLine`
+	EndReturn  string             `"="`
+	Start      string             `@Indent`
 	Body       []*Block           `{ @@ }`
-	End        string             `@NewLine`
+	End        string             `@Dedent`
 }
 
 type FuncParameter struct {
@@ -123,19 +85,13 @@ type FuncParameter struct {
 }
 
 type FuncParameterType struct {
-	Pos  lexer.Position
-	Name string `":" @Ident`
-}
-
-type BlockSection struct {
-	Exp       *Expression `@@`
-	Statement *Statement  `| @@`
-	End       *string     `@NewLine`
+	Pos   lexer.Position
+	Start string `":"`
+	Name  string `@Ident`
 }
 
 type Block struct {
 	Exp *Expression `@@`
-	End *string     `@NewLine`
 }
 
 type Statement struct {
@@ -328,15 +284,15 @@ func ParseFile(filename string) (*Module, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, imp := range tree.ImportSection.Imports {
-		parts := strings.Split(imp.Url, "/")
-		moduleName := parts[len(parts)-1]
-		println(moduleName)
-		// subTree, err := ParseFile("../examples/" + moduleName + ".yum")
-		// if err != nil {
-		// 	return nil, fmt.Errorf("failed to parse module: %s -> %v", moduleName, err)
-		// }
-		// tree.Modules = append(subTree.Modules, tree.Modules...)
-	}
+	// for _, imp := range tree.ImportSection.Imports {
+	// 	parts := strings.Split(imp.Url, "/")
+	// 	moduleName := parts[len(parts)-1]
+	// 	println(moduleName)
+	// 	// subTree, err := ParseFile("../examples/" + moduleName + ".yum")
+	// 	// if err != nil {
+	// 	// 	return nil, fmt.Errorf("failed to parse module: %s -> %v", moduleName, err)
+	// 	// }
+	// 	// tree.Modules = append(subTree.Modules, tree.Modules...)
+	// }
 	return tree, nil
 }

@@ -69,6 +69,8 @@ const (
 	Comment
 	skipComment
 	NewLine
+	Indent
+	Dedent
 )
 
 var tokenString = map[rune]string{
@@ -80,6 +82,9 @@ var tokenString = map[rune]string{
 	String:    "String",
 	RawString: "RawString",
 	Comment:   "Comment",
+	NewLine:   "NewLine",
+	Indent:    "Indent",
+	Dedent:    "Dedent",
 }
 
 // TokenString returns a printable string for a token or Unicode character.
@@ -92,7 +97,7 @@ func TokenString(tok rune) string {
 
 // GoWhitespace is the default value for the Scanner's Whitespace field.
 // Its value selects Go's white space characters.
-const GoWhitespace = 1<<'\t' | 1<<'\r' | 1<<' '
+const GoWhitespace = 1 << ' '
 
 const bufLen = 1024 // at least utf8.UTFMax
 
@@ -157,6 +162,8 @@ type Scanner struct {
 	// position in that case, or to obtain the position immediately
 	// after the most recently scanned token.
 	Position
+
+	indentStack int
 }
 
 // Init initializes a Scanner with a new source and returns s.
@@ -524,9 +531,9 @@ func (s *Scanner) Scan() rune {
 
 redo:
 	// skip white space
-	for s.Whitespace&(1<<uint(ch)) != 0 {
-		ch = s.next()
-	}
+	// for s.Whitespace&(1<<uint(ch)) != 0 {
+	// 	ch = s.next()
+	// }
 
 	// start collecting token text
 	s.tokBuf.Reset()
