@@ -1,5 +1,24 @@
 module main
 
+
+
+type Int i32
+type Float f32
+
+
+enum Direction
+  | Left
+  | Right
+
+
+type Person
+  age: string
+  name: string
+
+
+// method fullName(p: Person): string =
+//    "${p.name} ${p.name}"
+
 proc addFloatRef(a: float, b: float): float =
   a + b
 

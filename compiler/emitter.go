@@ -380,11 +380,11 @@ func (e *Emitter) EmitAll() (*bytes.Buffer, error) {
 	e.EmitMemory()
 	e.EmitRuntime()
 
-	for _, t := range e.Module.TypeSection.Types {
-		e.types[t.Name] = &TypeData{
-			Value: t.Alias,
-		}
-	}
+	// for _, t := range e.Module.TypeSection.Types {
+	// 	e.types[t.Name] = &TypeData{
+	// 		// Value: t.Alias,
+	// 	}
+	// }
 	for i, fun := range e.Module.FunctionSection.Functions {
 		e.funcs[fun.Name] = &FuncData{
 			Index:      i,

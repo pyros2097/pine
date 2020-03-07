@@ -13,6 +13,8 @@ type Module struct {
 	Name            string          `"module" @Ident`
 	End             string          `@NewLine`
 	ImportSection   ImportSection   `{ @@ }`
+	AliasSection    AliasSection    `{ @@ }`
+	EnumSection     EnumSection     `{ @@ }`
 	TypeSection     TypeSection     `{ @@ }`
 	FunctionSection FunctionSection `{ @@ }`
 }
@@ -42,18 +44,58 @@ type Import struct {
 // 	Values []*Literal `"(" [ @@ { "," @@ } ] ")"`
 // }
 
+type AliasSection struct {
+	Pos     lexer.Position
+	Start   *string  `@NewLine`
+	Aliases []*Alias `{ @@ }`
+	End     *string  `@NewLine`
+}
+
+type Alias struct {
+	Pos   lexer.Position
+	Name  string  `"type" @Ident`
+	Value *string `@Ident`
+	End   *string `@NewLine`
+}
+
+type EnumSection struct {
+	Pos   lexer.Position
+	Start *string `@NewLine`
+	Enums []*Enum `{ @@ }`
+	End   *string `@NewLine`
+}
+
+type Enum struct {
+	Pos   lexer.Position
+	Name  string       `"enum" @Ident`
+	Value []*EnumValue `[ @@ { @@ } ]`
+	End   *string      `@NewLine`
+}
+
+type EnumValue struct {
+	Pos   lexer.Position
+	Start string `@NewLine`
+	Name  string `"|" @Ident`
+}
+
 type TypeSection struct {
 	Pos   lexer.Position
 	Start *string `@NewLine`
-	Types []*Type `{ @@ }`
+	Types []*Type `@@`
 	End   *string `@NewLine`
 }
 
 type Type struct {
+	Pos    lexer.Position
+	Name   string      `"type" @Ident`
+	Fields []TypeField `[ @@ { @@ } ]`
+}
+
+type TypeField struct {
 	Pos   lexer.Position
-	Name  string `"type" @Ident`
-	Alias string `@Ident`
-	End   string `@NewLine`
+	Start string `@NewLine`
+	Name  string `@Ident`
+	Value string `":" @Ident`
 }
 
 type FunctionSection struct {
@@ -102,6 +144,7 @@ type Statement struct {
 	Assignment      *AssignmentStatement `| @@`
 	If              *IfStatement         `| @@`
 	For             *ForStatement        `| @@`
+	EchoStatement   *EchoStatement       `| @@`
 	AssertStatement *AssertStatement     `| @@`
 	ReturnStatement *Expression          `| @@`
 	XmlDecl         *XmlDecl             `| @@`
@@ -175,6 +218,11 @@ type Expression struct {
 type ReturnStatement struct {
 	Pos        lexer.Position `"return"`
 	Expression *Expression    `{ @@ }`
+}
+
+type EchoStatement struct {
+	Pos        lexer.Position `"echo"`
+	Expression *Expression    `@@`
 }
 
 type AssertStatement struct {
