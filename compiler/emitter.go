@@ -66,7 +66,7 @@ func NewEmitter(module *Module) *Emitter {
 		},
 		typeOpCode: map[string]byte{
 			"i32": op.I32,
-			"f32": op.F64,
+			"f32": op.F32,
 		},
 		Module:           module,
 		externFuncsCount: 0,
@@ -276,20 +276,20 @@ func (e *Emitter) emitOperation(buffer *bytes.Buffer, funcName, operation, ttype
 		case "*":
 			buffer.WriteByte(op.I32_MUL)
 		case "/":
-			buffer.WriteByte(op.I32_DIV)
+			buffer.WriteByte(op.I32_DIV_S)
 		default:
 			return fmt.Errorf("func '%s' operation '%s' is invalid for '%s'", funcName, operation, ttype)
 		}
 	case "float":
 		switch operation {
 		case "+":
-			buffer.WriteByte(op.F64_ADD)
+			buffer.WriteByte(op.F32_ADD)
 		case "-":
-			buffer.WriteByte(op.F64_SUB)
+			buffer.WriteByte(op.F32_SUB)
 		case "*":
-			buffer.WriteByte(op.F64_MUL)
+			buffer.WriteByte(op.F32_MUL)
 		case "/":
-			buffer.WriteByte(op.F64_DIV)
+			buffer.WriteByte(op.F32_DIV)
 		default:
 			return fmt.Errorf("func '%s' operation '%s' is invalid for '%s'", funcName, operation, ttype)
 		}
