@@ -47,9 +47,13 @@ type Direction
 
 ```golang
 type User
-  | id    string
-  | name  string
-  | email string
+  name: string
+  age: string
+  gender: string
+  address: string
+  createdAt: string
+  updatedAt: string
+  deletedAt: string
 ```
 
 #### C. String
@@ -107,7 +111,7 @@ add(b: 4, a: 1)
 
 #### A. if / elif / else
 
-```golang
+```python
 a := 10
 b := 20
 c := a > b ? 10 : a;
@@ -121,7 +125,7 @@ else:
 
 #### B. match
 
-```golang
+```python
 const c := 4
 match c:
 | 1 => _resize(y, x)
@@ -166,7 +170,7 @@ for i, v  := range nums:
 
 ```golang
 const data := map[string]{"name": "krab"}
-for k, v  := range nums:
+for k, v  := range data:
   echo k, v
 ```
 

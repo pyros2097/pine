@@ -11,9 +11,14 @@ enum Position
 type User
   name: string
   age: string
+  gender: string
+  address: string
+  createdAt: string
+  updatedAt: string
+  deletedAt: string
 
-// method fullName(p: Person): string =
-//    "${p.name} ${p.name}"
+// method fullName(u: User): string =
+//  "${u.name} ${u.name}"
 proc addFloatRef(a: float, b: float): float =
   a + b
 

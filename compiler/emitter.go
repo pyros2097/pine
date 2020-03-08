@@ -25,6 +25,8 @@ type FuncParam struct {
 }
 
 type TypeData struct {
+	Name  string
+	Type  string
 	Value string
 }
 
@@ -58,10 +60,19 @@ func NewEmitter(module *Module) *Emitter {
 		funcs:            map[string]*FuncData{},
 		types: map[string]*TypeData{
 			"int": &TypeData{ // type int i32
+				Name:  "int",
+				Type:  "alias",
 				Value: "i32",
 			},
 			"float": &TypeData{ // type float f32
+				Name:  "float",
+				Type:  "alias",
 				Value: "f32",
+			},
+			"string": &TypeData{ // type i32 for reference types
+				Name:  "string",
+				Type:  "type",
+				Value: "i32",
 			},
 		},
 		typeOpCode: map[string]byte{
@@ -380,11 +391,12 @@ func (e *Emitter) EmitAll() (*bytes.Buffer, error) {
 	e.EmitMemory()
 	e.EmitRuntime()
 
-	// for _, t := range e.Module.TypeSection.Types {
-	// 	e.types[t.Name] = &TypeData{
-	// 		// Value: t.Alias,
-	// 	}
-	// }
+	for _, t := range e.Module.Types {
+		e.types[t.Name] = &TypeData{
+			Name:  t.Name,
+			Value: "i32",
+		}
+	}
 	for i, fun := range e.Module.Functions {
 		if fun.Type == "test" {
 			fun.Name = "test_" + fun.Name

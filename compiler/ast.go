@@ -11,7 +11,6 @@ type Module struct {
 	Pos  lexer.Position
 	Name string `"module" @Ident`
 	// Imports []*Import `{ @@ }`
-	// Aliases         []*Alias        `{ @@ }`
 	Enums     []*Enum     `{ @@ }`
 	Types     []*Type     `{ @@ }`
 	Functions []*Function `{ @@ }`
@@ -31,12 +30,6 @@ type Import struct {
 // 	Pos    lexer.Position
 // 	Name   string     `"@" @Ident`
 // 	Values []*Literal `"(" [ @@ { "," @@ } ] ")"`
-// }
-
-// type Alias struct {
-// 	Pos   lexer.Position
-// 	Name  string  `"type" @Ident`
-// 	Value *string `@Ident`
 // }
 
 type Enum struct {
