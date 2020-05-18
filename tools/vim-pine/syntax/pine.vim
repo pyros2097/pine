@@ -6,8 +6,8 @@ endif
 syn case match
 
 " Keywords
-syn keyword     yumKeywords         module import extern return break continue if else match
-hi def link     yumKeywords         Keyword
+syn keyword     pineKeywords         module import extern proc method test type enum return break continue if elif else match
+hi def link     pineKeywords         Keyword
 
 " hi def link     goStatement         Statement
 " hi def link     goConditional       Conditional
@@ -15,40 +15,40 @@ hi def link     yumKeywords         Keyword
 " hi def link     goRepeat            Repeat
 
 " Builtin types
-syn keyword     yumType              byte i32 num map bool string error
-hi def link     yumType              Type
+syn keyword     pineType              byte bool int float int64 float64 map string error
+hi def link     pineType              Type
 
 " Builtin funcs
-syn keyword     yumBuiltins                 panic print println
-hi def link     yumBuiltins                 Identifier
+syn keyword     pineBuiltins                 echo panic
+hi def link     pineBuiltins                 Identifier
 
 " Builtin values
-syn keyword     yumBoolean                  true false
-syn keyword     yumPredefinedIdentifiers    nil
-hi def link     yumBoolean                  Boolean
-hi def link     yumPredefinedIdentifiers    goBoolean
+syn keyword     pineBoolean                  true false
+syn keyword     pinePredefinedIdentifiers    nil
+hi def link     pineBoolean                  Boolean
+hi def link     pinePredefinedIdentifiers    goBoolean
 
 " Comments; their contents
-syn keyword     yumTodo              contained TODO FIXME XXX BUG
-syn region      yumComment           start="//" end="$"
-hi def link     yumComment           Comment
-hi def link     yumTodo              Todo
+syn keyword     pineTodo              contained TODO FIXME XXX BUG
+syn region      pineComment           start="//" end="$"
+hi def link     pineComment           Comment
+hi def link     pineTodo              Todo
 
 " String, Numbers
-syntax match   yumSpecial           "\\\d\d\d\|\\."
-syntax region  yumString            start=+"+  skip=+\\\\\|\\"+  end=+"\|$+	contains=yumSpecial,@htmlPreproc
-syntax region  yumTemplate          start=/"/  skip=/\\\\\|\\`\|\n/  end=/"\|$/ contains=yumTemplateSubstitution nextgroup=@yumComments,@yumSymbols skipwhite skipempty
-syntax region  yumTemplateSubstitution matchgroup=yumTemplateSB contained start=/\${/ end=/}/ contains=@yumExpression
-hi def link    yumString                 String
-hi def link    yumTemplate               String
-hi def link    yumTemplateSubstitution   Label
-hi def link    yumTemplateSB             yumTemplateSubstitution
-syntax match   yumSpecialCharacter "'\\.'"
-syntax match   yumNumber           "-\=\<\d\+L\=\>\|0[xX][0-9a-fA-F]\+\>"
-syntax match   yumFloat            /\<-\=\%(\d\+\.\d\+\|\d\+\.\|\.\d\+\)\%([eE][+-]\=\d\+\)\=\>/
-syntax match   yumDollar           "\$"
-hi def link    yumNumber                 Number
-hi def link    yumFloat                  Number
+syntax match   pineSpecial           "\\\d\d\d\|\\."
+syntax region  pineString            start=+"+  skip=+\\\\\|\\"+  end=+"\|$+	contains=pineSpecial,@htmlPreproc
+syntax region  pineTemplate          start=/"/  skip=/\\\\\|\\`\|\n/  end=/"\|$/ contains=pineTemplateSubstitution nextgroup=@pineComments,@pineSymbols skipwhite skipempty
+syntax region  pineTemplateSubstitution matchgroup=pineTemplateSB contained start=/\${/ end=/}/ contains=@pineExpression
+hi def link    pineString                 String
+hi def link    pineTemplate               String
+hi def link    pineTemplateSubstitution   Label
+hi def link    pineTemplateSB             pineTemplateSubstitution
+syntax match   pineSpecialCharacter "'\\.'"
+syntax match   pineNumber           "-\=\<\d\+L\=\>\|0[xX][0-9a-fA-F]\+\>"
+syntax match   pineFloat            /\<-\=\%(\d\+\.\d\+\|\d\+\.\|\.\d\+\)\%([eE][+-]\=\d\+\)\=\>/
+syntax match   pineDollar           "\$"
+hi def link    pineNumber                 Number
+hi def link    pineFloat                  Number
 
 " Regions
 syn region      goParen             start='(' end=')' transparent
@@ -62,8 +62,8 @@ endif
 syn match       goSingleDecl        /\%(import\|var\|const\) [^(]\@=/ contains=goImport,goVar,goConst
 
 " Spaces after "[]"
-syn match     yumSpaceError display "\%(\[\]\)\@<=\s\+"
-hi def link   yumSpaceError        Error
+syn match     pineSpaceError display "\%(\[\]\)\@<=\s\+"
+hi def link   pineSpaceError        Error
 
 " Space-tab error
 if go#config#HighlightSpaceTabError()
@@ -76,16 +76,16 @@ if go#config#HighlightTrailingWhitespaceError()
 endif
 
 " Operators
-syn match     yumOperator /:=\|||\|<-\|<=\|>=\|==\|!=\|-\|+\|%\|>\|<\|=\|&&/
-hi def link   yumOperator          Operator
+syn match     pineOperator /:=\|||\|<-\|<=\|>=\|==\|!=\|-\|+\|%\|>\|<\|=\|&&/
+hi def link   pineOperator          Operator
 
 " Functions;
-syn match     yumFunction          /\w\+ = / nextgroup=yumSimpleParams skipwhite skipnl
-hi def link   yumFunction          Function
+syn match     pineFunction          /\w\+\ze(/ nextgroup=pineSimpleParams skipwhite skipnl
+hi def link   pineFunction          Function
 
 " Function calls;
-syn match     yumFunctionCall      /\w\+\ze(/ contains=yumBuiltins,yumDeclaration
-hi def link   yumFunctionCall      Type
+syn match     pineFunctionCall      /\w\+\ze(/ contains=pineBuiltins,pineDeclaration
+hi def link   pineFunctionCall      Type
 
 " Fields;
 syn match goField   /\.\w\+\
@@ -321,9 +321,9 @@ if s:vim_jsx_pretty_colorful_config == 1
 endif
 
 
-augroup vim-yum-hi
+augroup vim-pine-hi
   autocmd!
   autocmd ColorScheme * call s:hi()
 augroup end
 
-let b:current_syntax = "yum"
+let b:current_syntax = "pine"

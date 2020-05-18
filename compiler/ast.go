@@ -1,3 +1,5 @@
+//golint:ignore
+
 package compiler
 
 import (
@@ -8,213 +10,188 @@ import (
 )
 
 type Module struct {
-	Pos  lexer.Position
-	Name string `"module" @Ident`
-	// Imports []*Import `{ @@ }`
-	Enums     []*Enum     `{ @@ }`
-	Types     []*Type     `{ @@ }`
-	Functions []*Function `{ @@ }`
+	Pos       lexer.Position
+	Name      string      `parser:"\"module\" @Ident"`
+	Imports   []*Import   `parser:"{ @@ }"`
+	Enums     []*Enum     `parser:"{ @@ }"`
+	Types     []*Type     `parser:"{ @@ }"`
+	Functions []*Function `parser:"{ @@ }"`
+	Tests     []*Test     `parser:"{ @@ }"`
 }
+
 type Import struct {
 	Pos lexer.Position
-	Url string `"import" @String`
+	URL string `parser:"\"import\" @String"`
 }
-
-// type Fun struct {
-// 	Pos       lexer.Position
-// 	Decorator *DecoratorDecl `{ @@ }`
-// 	Fun       *FunDecl       `{ @@ }`
-// }
-
-// type DecoratorDecl struct {
-// 	Pos    lexer.Position
-// 	Name   string     `"@" @Ident`
-// 	Values []*Literal `"(" [ @@ { "," @@ } ] ")"`
-// }
 
 type Enum struct {
 	Pos   lexer.Position
-	Name  string       `"enum" @Ident`
-	Start string       `@Indent`
-	Value []*EnumValue `[ @@ { @@ } ]`
-	End   string       `@Dedent`
-}
-
-type EnumValue struct {
-	Pos  lexer.Position
-	Name string `"|" @Ident`
+	Name  string   `parser:"\"enum\" @Ident \"{\""`
+	Value []string `parser:"[ @Ident { @Ident } ] \"}\""`
 }
 
 type Type struct {
 	Pos    lexer.Position
-	Name   string      `"type" @Ident`
-	Start  string      `@Indent`
-	Fields []TypeField `[ @@ { @@ } ]`
-	End    string      `@Dedent`
+	Name   string      `parser:"\"type\" @Ident \"{\""`
+	Fields []TypeField `parser:"[ @@ { @@ } ] \"}\""`
 }
 
 type TypeField struct {
 	Pos   lexer.Position
-	Name  string `@Ident`
-	Value string `":" @Ident`
+	Name  string `parser:"@Ident"`
+	Value string `parser:"\":\" @Ident"`
+}
+
+type ReturnType struct {
+	Pos   lexer.Position
+	Start string `parser:"\":\""`
+	Name  string `parser:"@Ident"`
 }
 
 type Function struct {
 	Pos        lexer.Position
-	Type       string             `@("extern" | "proc" | "method" | "test")`
-	Name       string             `@Ident`
-	Parameters []FuncParameter    `"(" [ @@ { ","  @@ } ] ")"`
-	ReturnType *FuncParameterType `{ @@ }`
-	EndReturn  string             `"="`
-	Start      string             `@Indent`
-	Body       []*Block           `{ @@ }`
-	End        string             `@Dedent`
+	Type       string       `parser:"@(\"extern\" | \"proc\" | \"method\")"`
+	Name       string       `parser:"@Ident"`
+	Parameters []TypeField  `parser:"\"(\" [ @@ { \",\"  @@ } ] \")\""`
+	ReturnType *ReturnType  `parser:"{ @@ }"`
+	Statements []*Statement `parser:"\"{\" { @@ } \"}\""`
 }
 
-type FuncParameter struct {
-	Pos  lexer.Position
-	Name string            `@Ident`
-	Type FuncParameterType `@@`
-}
-
-type FuncParameterType struct {
-	Pos   lexer.Position
-	Start string `":"`
-	Name  string `@Ident`
-}
-
-type Block struct {
-	Exp *Expression `@@`
+type Test struct {
+	Pos        lexer.Position
+	Name       string       `parser:"\"test\" @String"`
+	Statements []*Statement `parser:"\"{\" { @@ } \"}\""`
 }
 
 type Statement struct {
 	Pos             lexer.Position
-	FuncCall        *FuncCallStatement   `@@`
-	Assignment      *AssignmentStatement `| @@`
-	If              *IfStatement         `| @@`
-	For             *ForStatement        `| @@`
-	EchoStatement   *EchoStatement       `| @@`
-	AssertStatement *AssertStatement     `| @@`
-	ReturnStatement *Expression          `| @@`
-	XmlDecl         *XmlDecl             `| @@`
+	FuncCall        *FuncCallStatement   `parser:"@@"`
+	Assignment      *AssignmentStatement `parser:"| @@"`
+	If              *IfStatement         `parser:"| @@"`
+	For             *ForStatement        `parser:"| @@"`
+	EchoStatement   *EchoStatement       `parser:"| @@"`
+	AssertStatement *AssertStatement     `parser:"| @@"`
+	ReturnStatement *Expression          `parser:"| @@"`
+	XmlDecl         *XmlDecl             `parser:"| @@"`
 }
 
 type XmlDecl struct {
 	Pos        lexer.Position
-	Name       string         `"<"@Ident`
-	Parameters []*KeyValue    `[ @@ { @@ } ]`
-	EndName    lexer.Position `">"`
-	Children   []*XmlDecl     `{ @@ }`
-	Value      string         `{ @Ident }` // Todo make this match with @String or Literal
-	Close      string         `"<""/"@Ident">"`
+	Name       string         `parser:"\"<\"@Ident"`
+	Parameters []*KeyValue    `parser:"[ @@ { @@ } ]"`
+	EndName    lexer.Position `parser:"\">\""`
+	Children   []*XmlDecl     `parser:"{ @@ }"`
+	Value      string         `parser:"{ @Ident }"` // Todo make this match with @String or Literal
+	Close      string         `parser:"\"<\"\"/\"@Ident\">\""`
 }
 
 type KeyValue struct {
 	Pos   lexer.Position
-	Key   string   `@Ident`
-	Value *Literal `"=" @@`
+	Key   string   `parser:"@Ident"`
+	Value *Literal `parser:"\"=\" @@"`
 }
 
 type AssignmentStatement struct {
 	Pos   lexer.Position
-	Name  string             `@Ident`
-	Value *AssignmentLiteral `":""=" @@`
+	Name  string             `parser:"@Ident"`
+	Value *AssignmentLiteral `parser:"\":\"\"=\" @@"`
 }
 
 type FuncCallStatement struct {
 	Pos    lexer.Position
-	Name   string     `@Ident`
-	Values []*Literal `"(" [ @@ { "," @@ } ] ")"`
+	Name   string     `parser:"@Ident"`
+	Values []*Literal `parser:"\"(\" [ @@ { \",\" @@ } ] \")\""`
 }
 
 type IfStatement struct {
 	Pos       lexer.Position
-	Condition string         `"if" @Ident`
-	End       lexer.Position `"end"`
+	Condition []*Expression `parser:"\"if\" @@"`
+	Result    []*Statement  `parser:"\"{\" { @@ } \"}\""`
+	Alternate []*Statement  `parser:"| \"else\" \"{\" { @@ } \"}\""`
 }
 
 type ForStatement struct {
 	Pos         lexer.Position
-	Infinite    *ForInfiniteStatement    `@@`
-	Conditional *ForConditionalStatement `| @@`
-	Iterator    *ForIteratorStatement    `| @@`
+	Infinite    *ForInfiniteStatement    `parser:"@@"`
+	Conditional *ForConditionalStatement `parser:"| @@"`
+	Iterator    *ForIteratorStatement    `parser:"| @@"`
 }
 
 type ForInfiniteStatement struct {
-	Pos lexer.Position `"for"`
-	End lexer.Position `"end"`
+	Pos        lexer.Position `parser:"\"for\""`
+	Statements []*Statement   `parser:"\"{\" { @@ } \"}\""`
 }
 
 type ForConditionalStatement struct {
-	Pos        lexer.Position `"for"`
-	Identifier string         `@Ident`
-	End        lexer.Position `"end"`
+	Pos        lexer.Position `parser:"\"for\""`
+	Condition  []*Expression  `parser:"@@"`
+	Statements []*Statement   `parser:"\"{\" { @@ } \"}\""`
 }
 
 type ForIteratorStatement struct {
-	Pos      lexer.Position `"for"`
-	Variable string         `@Ident`
-	// Identifier string         `"in" @Ident`
-	End lexer.Position `"end"`
+	Pos        lexer.Position `parser:"\"for\""`
+	Item       string         `parser:"@Ident"`
+	Reference  *Literal       `parser:"\"in\" @@"`
+	Statements []*Statement   `parser:"\"{\" { @@ } \"}\""`
 }
 
 type Expression struct {
-	Left     *Literal    `@@`
-	Operator *string     `{ @("+" | "-" | "*" | "/" | "<=" | ">=" | "=""=" | "<" | ">" | "!=" | ":""=" | "=") }`
-	Right    *Expression `{ @@ }`
+	Left     *Literal    `parser:"@@"`
+	Operator *string     `parser:"{ @(\"+\" | \"-\" | \"*\" | \"/\" | \"<=\" | \">=\" | \"=\"\"=\" | \"<\" | \">\" | \":\"\"=\" |\"!\"\"=\" | \"=\") }"`
+	Right    *Expression `parser:"{ @@ }"`
 }
 
 type ReturnStatement struct {
-	Pos        lexer.Position `"return"`
-	Expression *Expression    `{ @@ }`
+	Pos        lexer.Position `parser:"\"return\""`
+	Expression *Expression    `parser:"{ @@ }"`
 }
 
 type EchoStatement struct {
-	Pos        lexer.Position `"echo"`
-	Expression *Expression    `@@`
+	Pos        lexer.Position `parser:"\"echo\""`
+	Expression *Expression    `parser:"@@"`
 }
 
 type AssertStatement struct {
-	Pos        lexer.Position `"assert"`
-	Expression *Expression    `@@`
+	Pos        lexer.Position `parser:"\"assert\""`
+	Expression *Expression    `parser:"@@"`
 }
 
 type MapStatement struct {
 	Pos   lexer.Position
-	Value *MapLiteral `"{" { @@ [ "," ] } "}"`
+	Value *MapLiteral `parser:"\"{\" { @@ [ \",\" ] } \"}\""`
 }
 
 type MapLiteral struct {
 	Pos   lexer.Position
-	Key   *string   `@String ":"`
-	Value *MapValue `@@`
+	Key   *string   `parser:"@String \":\""`
+	Value *MapValue `parser:"@@"`
 }
 
 type MapValue struct {
 	Pos     lexer.Position
-	Literal *AssignmentLiteral `@@`
-	Value   *MapStatement      `| @@`
+	Literal *AssignmentLiteral `parser:"@@"`
+	Value   *MapStatement      `parser:"| @@"`
 }
 
 type AssignmentLiteral struct {
 	Pos     lexer.Position
-	Call    *FuncCallStatement `@@`
-	Literal *Literal           `| @@`
-	Map     *MapStatement      `| @@`
+	Call    *FuncCallStatement `parser:"@@"`
+	Literal *Literal           `parser:"| @@"`
+	Map     *MapStatement      `parser:"| @@"`
 }
 
 // Literal is a "union" type, where only one matching value will be present.
 type Literal struct {
 	Pos       lexer.Position
-	Nil       bool        `@"nil"`
-	Str       *string     `| @String`
-	Int       *int        `| @Int`
-	Float     *float32    `| @Float`
-	Bool      *string     `| @( "true" | "false" )`
-	Reference *string     `| @Ident { @"." @Ident }`
-	List      []*Literal  `| "[" { @@ [ "," ] } "]"`
-	Params    []*Literal  `| "(" [ @@ { "," @@ } ] ")"`
-	Sub       *Expression `| "(" @@ ")"`
+	Nil       bool        `parser:"@\"nil\""`
+	Str       *string     `parser:"| @String"`
+	Int       *int        `parser:"| @Int"`
+	Float     *float32    `parser:"| @Float"`
+	Bool      *string     `parser:"| @( \"true\" | \"false\" )"`
+	Reference *string     `parser:"| @Ident { @\".\" @Ident }"`
+	List      []*Literal  `parser:"| \"[\" { @@ [ \",\" ] } \"]\""`
+	Params    []*Literal  `parser:"| \"(\" [ @@ { \",\" @@ } ] \")\""`
+	Sub       *Expression `parser:"| \"(\" @@ \")\""`
 	// Map       []*MapItem `| "{" { @@ [ "," ] } "}"`
 }
 
@@ -258,14 +235,7 @@ type Literal struct {
 // 	return fmt.Sprintf("%v: %v", m.Key, m.Value)
 // }
 
-// type CommentStatement struct {
-// 	Pos  lexer.Position
-// 	Text string `@Comment`
-// }
-
-var parser = participle.MustBuild(&Module{},
-	participle.Lexer(DefaultDefinition),
-)
+var parser = participle.MustBuild(&Module{})
 
 func ParseFile(filename string) (*Module, error) {
 	data, err := ioutil.ReadFile(filename)

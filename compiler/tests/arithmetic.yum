@@ -1,14 +1,16 @@
 module main
 
-enum Direction
-  | Left
-  | Right
+enum Direction {
+  Left
+  Right
+}
 
-enum Position
-  | Top
-  | Bottom
+enum Position {
+  Top
+  Bottom
+}
 
-type User
+type User {
   name: string
   age: string
   gender: string
@@ -16,30 +18,19 @@ type User
   createdAt: string
   updatedAt: string
   deletedAt: string
+}
 
-// method fullName(u: User): string =
-//  "${u.name} ${u.name}"
-proc addFloatRef(a: float, b: float): float =
-  a + b
+proc adder(a: int, b: int) : int  {
+  if a < b {
+    return a - b + b
+  }
+  return a + b
+}
 
-proc addIntRef(a: int, b: int): int =
-  a + b
+test "for equal or not equal" {
+  assert 1 == 1
+  assert 2 == 2
+  assert 4 == 4
+  assert 3 != 13
+}
 
-proc addInt(): int =
-  5 + 3
-
-proc subInt(): int =
-  5 - 3
-
-proc mulInt(): int =
-  5 * 3
-
-proc divInt(): int =
-  5 / 3
-
-test all() =
-  addIntRef(1, 3)
-  addInt()
-  subInt()
-  mulInt()
-  divInt()

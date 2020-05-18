@@ -2,18 +2,22 @@
 
 # Pine Programming Language
 
-![Test](https://github.com/pyros2097/yum/workflows/Test/badge.svg)
+![Tests](https://github.com/pyros2097/yum/workflows/Test/badge.svg)
+
+A programming language with a syntax largely inspired
+by nim but with the simplicity of go. It has jsx support in built by
+default and targets webassembly.
 
 ## Aims
 
 - first class functions
-- first class dependent types
+  <!-- - first class dependent types -->
 - targets webassembly
 - clean syntax
-- **basic**: int, float, bool, byte, enum
-- **reference**: string, array, map, nil, error
-- **funcs**: extern, proc, method, test
-- **conditions**: if, elif, else, match
+- **basics**: int, float, bool, byte, enum
+- **references**: string, array, map, nil, error
+- **functions**: extern, proc, method, test
+- **conditions**: if, elif, else, match, break, continue
 - **loops**: for
 - **inbuilt**: echo, assert
 
@@ -26,7 +30,7 @@ const nerd: bool = false
 const template: string = "hello world"
 const age: int = 21
 const pi: float = 3.14
-const byte = 0x05
+const token: byte = 0x05
 const data: string = nil
 const validation: error = error("123")
 ```
@@ -35,8 +39,8 @@ const validation: error = error("123")
 
 #### A. Enums
 
-```golang
-type Direction
+```pony
+enum Direction
   | Left
   | Right
   | Up
@@ -56,7 +60,7 @@ type User
   deletedAt: string
 ```
 
-#### C. String
+#### C. Strings
 
 ```golang
 const name := "Bob"
@@ -95,7 +99,7 @@ echo nums["one"]  // ==> "1"
 echo nums["infinity"] // ==> nil
 ```
 
-#### 3. Funcs
+#### 3. Functions
 
 ```golang
 type Operator proc(a int, b int) bool
@@ -125,8 +129,8 @@ else:
 
 #### B. match
 
-```python
-const c := 4
+```pony
+c := 4
 match c:
 | 1 => _resize(y, x)
 | 2 => _processInput(c, x, y)
@@ -192,7 +196,7 @@ assert x == 2
 
 #### 7. Operators
 
-#### Arithmetic Operators
+#### A. Arithmetic Operators
 
 - \+ (addition)
 - \- (subtraction)
@@ -200,13 +204,13 @@ assert x == 2
 - / (division)
 - % (modulo)
 
-#### Logical Operators
+#### B. Logical Operators
 
 - && (and)
 - || (or)
 - ! (not)
 
-#### Comparison Operators
+#### C. Comparison Operators
 
 - \> (gt)
 - <
@@ -216,8 +220,10 @@ assert x == 2
 - !=
 - ^
 
-#### Assignment Operators
+#### D. Assignment Operators
 
+- :=
+- =
 - +=
 - -=
 - \*=

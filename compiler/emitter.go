@@ -6,8 +6,6 @@ import (
 	"fmt"
 
 	"yum/compiler/op"
-
-	"github.com/alecthomas/repr"
 )
 
 type FuncData struct {
@@ -139,25 +137,25 @@ func (e *Emitter) EmitExports(typeIndex int) {
 	e.FuncsSection.WriteByte(byte(typeIndex))
 }
 
-func (e *Emitter) EmitFuncBody(name string, body []*Block) error {
-	buf := bytes.NewBuffer([]byte{
-		0x00, // local decl count
-	})
-	for i, s := range body {
-		err := e.emitExpression(buf, name, s.Exp.Operator, s.Exp.Left, s.Exp.Right)
-		if err != nil {
-			return err
-		}
-		if i != len(body)-1 {
-			buf.WriteByte(op.DROP)
-		}
-	}
-	if e.funcs[name].ReturnType == "" {
-		buf.WriteByte(op.DROP)
-	}
-	encodeSleb128(e.FuncsBodySection, int32(buf.Len()+1)) // funcbody size
-	e.FuncsBodySection.Write(buf.Bytes())
-	e.FuncsBodySection.WriteByte(op.END)
+func (e *Emitter) EmitFuncBody(name string, body []*Statement) error {
+	// buf := bytes.NewBuffer([]byte{
+	// 	0x00, // local decl count
+	// })
+	// for i, s := range body {
+	// 	err := e.emitExpression(buf, name, s.Exp.Operator, s.Exp.Left, s.Exp.Right)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	if i != len(body)-1 {
+	// 		buf.WriteByte(op.DROP)
+	// 	}
+	// }
+	// if e.funcs[name].ReturnType == "" {
+	// 	buf.WriteByte(op.DROP)
+	// }
+	// encodeSleb128(e.FuncsBodySection, int32(buf.Len()+1)) // funcbody size
+	// e.FuncsBodySection.Write(buf.Bytes())
+	// e.FuncsBodySection.WriteByte(op.END)
 	return nil
 }
 
@@ -385,74 +383,75 @@ func (e *Emitter) EmitRuntime() {
 }
 
 func (e *Emitter) EmitAll() (*bytes.Buffer, error) {
-	buffer := bytes.NewBuffer(nil)
-	buffer.Write([]byte{0x00, 0x61, 0x73, 0x6d}) // WASM_BINARY_MAGIC
-	buffer.Write([]byte{0x01, 0x00, 0x00, 0x00}) // WASM_BINARY_VERSION
-	e.EmitMemory()
-	e.EmitRuntime()
+	// buffer := bytes.NewBuffer(nil)
+	// buffer.Write([]byte{0x00, 0x61, 0x73, 0x6d}) // WASM_BINARY_MAGIC
+	// buffer.Write([]byte{0x01, 0x00, 0x00, 0x00}) // WASM_BINARY_VERSION
+	// e.EmitMemory()
+	// e.EmitRuntime()
 
-	for _, t := range e.Module.Types {
-		e.types[t.Name] = &TypeData{
-			Name:  t.Name,
-			Value: "i32",
-		}
-	}
-	for i, fun := range e.Module.Functions {
-		if fun.Type == "test" {
-			fun.Name = "test_" + fun.Name
-		}
-		_, exists := e.funcs[fun.Name]
-		if exists {
-			return nil, fmt.Errorf("Function '%s' is already defined", fun.Name)
-		}
-		e.funcs[fun.Name] = &FuncData{
-			Index:  i,
-			Name:   fun.Name,
-			Params: map[string]*FuncParam{},
-		}
-		if fun.ReturnType != nil {
-			e.funcs[fun.Name].ReturnType = fun.ReturnType.Name
-		}
-		for pi, param := range fun.Parameters {
-			e.funcs[fun.Name].Params[param.Name] = &FuncParam{
-				Index: pi,
-				Name:  param.Name,
-				Type:  param.Type.Name,
-			}
-		}
-		err := e.EmitTypes(fun.Name)
-		if err != nil {
-			return nil, fmt.Errorf("Failed to emitTypes %v", err)
-		}
-		// if fun.Type == "extern" {
-		// 	e.EmitImports(module.Name, fun.Name, e.externFuncsCount)
-		// 	e.externFuncsCount += 1
-		// }
-		e.EmitFuncs(fun.Name, e.externFuncsCount+e.funcsCount) // function 0 signature index
+	// for _, t := range e.Module.Types {
+	// 	e.types[t.Name] = &TypeData{
+	// 		Name:  t.Name,
+	// 		Value: "i32",
+	// 	}
+	// }
+	// for i, fun := range e.Module.Functions {
+	// 	if fun.Type == "test" {
+	// 		fun.Name = "test_" + fun.Name
+	// 	}
+	// 	_, exists := e.funcs[fun.Name]
+	// 	if exists {
+	// 		return nil, fmt.Errorf("Function '%s' is already defined", fun.Name)
+	// 	}
+	// 	e.funcs[fun.Name] = &FuncData{
+	// 		Index:  i,
+	// 		Name:   fun.Name,
+	// 		Params: map[string]*FuncParam{},
+	// 	}
+	// 	if fun.ReturnType != nil {
+	// 		e.funcs[fun.Name].ReturnType = fun.ReturnType.Name
+	// 	}
+	// 	for pi, param := range fun.Parameters {
+	// 		e.funcs[fun.Name].Params[param.Name] = &FuncParam{
+	// 			Index: pi,
+	// 			Name:  param.Name,
+	// 			Type:  param.Type.Name,
+	// 		}
+	// 	}
+	// 	err := e.EmitTypes(fun.Name)
+	// 	if err != nil {
+	// 		return nil, fmt.Errorf("Failed to emitTypes %v", err)
+	// 	}
+	// 	// if fun.Type == "extern" {
+	// 	// 	e.EmitImports(module.Name, fun.Name, e.externFuncsCount)
+	// 	// 	e.externFuncsCount += 1
+	// 	// }
+	// 	e.EmitFuncs(fun.Name, e.externFuncsCount+e.funcsCount) // function 0 signature index
 
-		err = e.EmitFuncBody(fun.Name, fun.Body)
-		if err != nil {
-			return nil, fmt.Errorf("Failed to EmitFuncBody %v", err)
-		}
-		e.funcsCount += 1
-	}
-	repr.Println(e.types)
-	repr.Println(e.funcs)
-	buffer.Write([]byte{op.SECTION_TYPES, byte(e.TypesSection.Len() + 1), byte(e.externFuncsCount + e.funcsCount)}) // Type section code, section size, num types, type data
-	buffer.Write(e.TypesSection.Bytes())
-	buffer.Write([]byte{op.SECTION_IMPORTS, byte(e.ImportsSection.Len() + 1), byte(e.externFuncsCount)}) // Imports section, section size, num imports, type data
-	buffer.Write(e.ImportsSection.Bytes())
-	buffer.Write([]byte{op.SECTION_FUNCS, byte(e.FuncsSection.Len() + 1), byte(e.funcsCount)}) // Func Sig section code, section size, num types, type data
-	buffer.Write(e.FuncsSection.Bytes())
-	buffer.Write([]byte{op.SECTION_MEMORY, byte(e.MemorySection.Len() + 1), 0x01}) // Memory section code, section size, num memories
-	buffer.Write(e.MemorySection.Bytes())
-	buffer.Write([]byte{op.SECTION_GLOBALS, byte(e.GlobalsSection.Len() + 1), byte(e.globalsCount)}) // globals section code, section size, num globals
-	buffer.Write(e.GlobalsSection.Bytes())
-	buffer.Write([]byte{op.SECTION_EXPORTS, byte(e.ExportsSection.Len() + 1), byte(e.funcsCount)}) // exports section code, section size, num exports
-	buffer.Write(e.ExportsSection.Bytes())
-	buffer.WriteByte(op.SECTION_FUNCS_BODY)                  // funcbody section code
-	encodeSleb128(buffer, int32(e.FuncsBodySection.Len()+1)) // section size
-	buffer.WriteByte(byte(e.funcsCount))                     // num functions
-	buffer.Write(e.FuncsBodySection.Bytes())
-	return buffer, nil
+	// 	err = e.EmitFuncBody(fun.Name, fun.Body)
+	// 	if err != nil {
+	// 		return nil, fmt.Errorf("Failed to EmitFuncBody %v", err)
+	// 	}
+	// 	e.funcsCount += 1
+	// }
+	// repr.Println(e.types)
+	// repr.Println(e.funcs)
+	// buffer.Write([]byte{op.SECTION_TYPES, byte(e.TypesSection.Len() + 1), byte(e.externFuncsCount + e.funcsCount)}) // Type section code, section size, num types, type data
+	// buffer.Write(e.TypesSection.Bytes())
+	// buffer.Write([]byte{op.SECTION_IMPORTS, byte(e.ImportsSection.Len() + 1), byte(e.externFuncsCount)}) // Imports section, section size, num imports, type data
+	// buffer.Write(e.ImportsSection.Bytes())
+	// buffer.Write([]byte{op.SECTION_FUNCS, byte(e.FuncsSection.Len() + 1), byte(e.funcsCount)}) // Func Sig section code, section size, num types, type data
+	// buffer.Write(e.FuncsSection.Bytes())
+	// buffer.Write([]byte{op.SECTION_MEMORY, byte(e.MemorySection.Len() + 1), 0x01}) // Memory section code, section size, num memories
+	// buffer.Write(e.MemorySection.Bytes())
+	// buffer.Write([]byte{op.SECTION_GLOBALS, byte(e.GlobalsSection.Len() + 1), byte(e.globalsCount)}) // globals section code, section size, num globals
+	// buffer.Write(e.GlobalsSection.Bytes())
+	// buffer.Write([]byte{op.SECTION_EXPORTS, byte(e.ExportsSection.Len() + 1), byte(e.funcsCount)}) // exports section code, section size, num exports
+	// buffer.Write(e.ExportsSection.Bytes())
+	// buffer.WriteByte(op.SECTION_FUNCS_BODY)                  // funcbody section code
+	// encodeSleb128(buffer, int32(e.FuncsBodySection.Len()+1)) // section size
+	// buffer.WriteByte(byte(e.funcsCount))                     // num functions
+	// buffer.Write(e.FuncsBodySection.Bytes())
+	// return buffer, nil
+	return nil, nil
 }
