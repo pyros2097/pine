@@ -2,14 +2,15 @@ package main
 
 import (
 	"os"
-	"yum/compiler"
+
+	"github.com/pyros2097/pine/compiler"
 
 	wasm "github.com/wasmerio/go-ext-wasm/wasmer"
 )
 
 func main() {
 	if len(os.Args) != 2 {
-		println("Usage: yum file.yum")
+		println("Usage: pine file.pine")
 		return
 	}
 	filename := os.Args[1]

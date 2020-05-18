@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"yum/compiler/op"
+	"github.com/pyros2097/pine/compiler/op"
 )
 
 type FuncData struct {

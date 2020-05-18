@@ -1,4 +1,4 @@
-module yum
+module github.com/pyros2097/pine
 
 go 1.12
 

@@ -2,8 +2,8 @@ test:
 	go test ./...
 
 vim:
-	rm -rf ~/.vim/pack/plugins/start/vim-yum/
-	cp -R tools/vim-yum/ ~/.vim/pack/plugins/start/vim-yum/
+	rm -rf ~/.vim/pack/plugins/start/vim-pine/
+	cp -R tools/vim-pine/ ~/.vim/pack/plugins/start/vim-pine/
 
 
 # wat2wasm -d -v ww.wat
