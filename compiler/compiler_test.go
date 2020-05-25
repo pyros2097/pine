@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	wasm "github.com/wasmerio/go-ext-wasm/wasmer"
 
 	"github.com/alecthomas/assert"
 	"github.com/alecthomas/repr"
@@ -37,32 +36,44 @@ func TestSnapshotAll(t *testing.T) {
 			ast, err := ParseFile("./tests/" + filename)
 			require.NoError(t, err)
 			resultString := repr.String(ast, repr.Indent("  "))
-			snapshotter.SnapshotTName(t, strings.Replace(filename, ".yum", ".go", 1), resultString)
+			snapshotter.SnapshotTName(t, strings.Replace(filename, ".pi", ".go", 1), resultString)
 
-			file, err := os.Create("./.snapshots/" + strings.Replace(filename, ".yum", ".wasm", 1))
+			jsFile, err := os.Create("./.snapshots/" + strings.Replace(filename, ".pi", ".js", 1))
 			if err != nil {
 				require.NoError(t, err)
 			}
-			defer file.Close()
-			data, err := NewEmitter(ast).EmitAll()
+			defer jsFile.Close()
+			data, err := NewEmitter(ast).EmitJS()
 			if err != nil {
 				require.NoError(t, err)
 			}
-			io.Copy(file, bytes.NewBuffer(data.Bytes()))
-			instance, err := wasm.NewInstance(data.Bytes())
-			if err != nil {
-				require.NoError(t, err)
-			}
-			defer instance.Close()
-			for _, fun := range ast.Functions {
-				if strings.HasPrefix(fun.Name, "test_") {
-					require.NotNil(t, instance.Exports[fun.Name])
-					result, err := instance.Exports[fun.Name]()
-					require.NoError(t, err)
-					require.NotNil(t, result)
-					assert.Equal(t, "void", result.String())
-				}
-			}
+			io.Copy(jsFile, bytes.NewBuffer(data.Bytes()))
+
+			// file, err := os.Create("./.snapshots/" + strings.Replace(filename, ".pi", ".wasm", 1))
+			// if err != nil {
+			// 	require.NoError(t, err)
+			// }
+			// defer file.Close()
+			// TODO: later
+			// data, err := NewEmitter(ast).EmitWASM()
+			// if err != nil {
+			// 	require.NoError(t, err)
+			// }
+			// io.Copy(file, bytes.NewBuffer(data.Bytes()))
+			// instance, err := wasm.NewInstance(data.Bytes())
+			// if err != nil {
+			// 	require.NoError(t, err)
+			// }
+			// defer instance.Close()
+			// for _, fun := range ast.Functions {
+			// 	if strings.HasPrefix(fun.Name, "test_") {
+			// 		require.NotNil(t, instance.Exports[fun.Name])
+			// 		result, err := instance.Exports[fun.Name]()
+			// 		require.NoError(t, err)
+			// 		require.NotNil(t, result)
+			// 		assert.Equal(t, "void", result.String())
+			// 	}
+			// }
 		})
 	}
 }

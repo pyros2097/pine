@@ -65,97 +65,127 @@
   Functions: []*compiler.Function{
     &compiler.Function{
       Pos: Position{Filename: "", Offset: 221, Line: 23, Column: 1},
-      Type: "proc",
-      Name: "adder",
+      Type: "method",
+      Name: "fullName",
       Parameters: []compiler.TypeField{
         compiler.TypeField{
-          Pos: Position{Filename: "", Offset: 232, Line: 23, Column: 12},
+          Pos: Position{Filename: "", Offset: 237, Line: 23, Column: 17},
+          Name: "u",
+          Value: "User",
+        },
+      },
+      ReturnType: &compiler.ReturnType{
+        Pos: Position{Filename: "", Offset: 246, Line: 23, Column: 26},
+        Name: "string",
+      },
+      Statements: []*compiler.Statement{
+        &compiler.Statement{
+          Pos: Position{Filename: "", Offset: 260, Line: 24, Column: 3},
+          Assignment: &compiler.AssignmentStatement{
+            Pos: Position{Filename: "", Offset: 260, Line: 24, Column: 3},
+            Name: "name",
+            Expression: u.name map :=  return u.name + " " + u.age,
+          },
+        },
+      },
+    },
+    &compiler.Function{
+      Pos: Position{Filename: "", Offset: 401, Line: 35, Column: 1},
+      Type: "proc",
+      Name: "Counter",
+      Parameters: []compiler.TypeField{
+        compiler.TypeField{
+          Pos: Position{Filename: "", Offset: 414, Line: 35, Column: 14},
           Name: "a",
           Value: "int",
         },
         compiler.TypeField{
-          Pos: Position{Filename: "", Offset: 240, Line: 23, Column: 20},
+          Pos: Position{Filename: "", Offset: 422, Line: 35, Column: 22},
           Name: "b",
           Value: "int",
         },
       },
       ReturnType: &compiler.ReturnType{
-        Pos: Position{Filename: "", Offset: 248, Line: 23, Column: 28},
+        Pos: Position{Filename: "", Offset: 430, Line: 35, Column: 30},
         Name: "int",
       },
       Statements: []*compiler.Statement{
         &compiler.Statement{
-          Pos: Position{Filename: "", Offset: 259, Line: 24, Column: 3},
+          Pos: Position{Filename: "", Offset: 441, Line: 36, Column: 3},
+          FuncCall: &compiler.FuncCallStatement{
+            Pos: Position{Filename: "", Offset: 441, Line: 36, Column: 3},
+            Name: "return",
+            Values: []*compiler.Literal{
+                React.createElement(
+    View,
+    {},
+    React.createElement(
+        View,
+        {},
+        React.createElement(
+                Text,
+                {},
+        )
+,     )
+,     React.createElement(
+        View,
+        {},
+        React.createElement(
+                Text,
+                {},
+        )
+,     )
+,   )
+,
+            },
+          },
+        },
+      },
+    },
+    &compiler.Function{
+      Pos: Position{Filename: "", Offset: 624, Line: 52, Column: 1},
+      Type: "proc",
+      Name: "adder",
+      Parameters: []compiler.TypeField{
+        compiler.TypeField{
+          Pos: Position{Filename: "", Offset: 635, Line: 52, Column: 12},
+          Name: "a",
+          Value: "int",
+        },
+        compiler.TypeField{
+          Pos: Position{Filename: "", Offset: 643, Line: 52, Column: 20},
+          Name: "b",
+          Value: "int",
+        },
+      },
+      ReturnType: &compiler.ReturnType{
+        Pos: Position{Filename: "", Offset: 651, Line: 52, Column: 28},
+        Name: "int",
+      },
+      Statements: []*compiler.Statement{
+        &compiler.Statement{
+          Pos: Position{Filename: "", Offset: 662, Line: 53, Column: 3},
           If: &compiler.IfStatement{
-            Pos: Position{Filename: "", Offset: 259, Line: 24, Column: 3},
+            Pos: Position{Filename: "", Offset: 662, Line: 53, Column: 3},
             Condition: []*compiler.Expression{
-              &compiler.Expression{
-                Left: &compiler.Literal{
-                  Pos: Position{Filename: "", Offset: 262, Line: 24, Column: 6},
-                  Reference: &"a",
-                },
-                Operator: &"<",
-                Right: &compiler.Expression{
-                  Left: &compiler.Literal{
-                    Pos: Position{Filename: "", Offset: 266, Line: 24, Column: 10},
-                    Reference: &"b",
-                  },
-                },
-              },
+              a < b,
             },
             Result: []*compiler.Statement{
               &compiler.Statement{
-                Pos: Position{Filename: "", Offset: 274, Line: 25, Column: 5},
-                ReturnStatement: &compiler.Expression{
-                  Left: &compiler.Literal{
-                    Pos: Position{Filename: "", Offset: 274, Line: 25, Column: 5},
-                    Reference: &"return",
-                  },
-                  Right: &compiler.Expression{
-                    Left: &compiler.Literal{
-                      Pos: Position{Filename: "", Offset: 281, Line: 25, Column: 12},
-                      Reference: &"a",
-                    },
-                    Operator: &"-",
-                    Right: &compiler.Expression{
-                      Left: &compiler.Literal{
-                        Pos: Position{Filename: "", Offset: 285, Line: 25, Column: 16},
-                        Reference: &"b",
-                      },
-                      Operator: &"+",
-                      Right: &compiler.Expression{
-                        Left: &compiler.Literal{
-                          Pos: Position{Filename: "", Offset: 289, Line: 25, Column: 20},
-                          Reference: &"b",
-                        },
-                      },
-                    },
-                  },
+                Pos: Position{Filename: "", Offset: 677, Line: 54, Column: 5},
+                ReturnStatement: &compiler.ReturnStatement{
+                  Pos: Position{Filename: "", Offset: 677, Line: 54, Column: 5},
+                  Expression: a - b + b,
                 },
               },
             },
           },
         },
         &compiler.Statement{
-          Pos: Position{Filename: "", Offset: 297, Line: 27, Column: 3},
-          ReturnStatement: &compiler.Expression{
-            Left: &compiler.Literal{
-              Pos: Position{Filename: "", Offset: 297, Line: 27, Column: 3},
-              Reference: &"return",
-            },
-            Right: &compiler.Expression{
-              Left: &compiler.Literal{
-                Pos: Position{Filename: "", Offset: 304, Line: 27, Column: 10},
-                Reference: &"a",
-              },
-              Operator: &"+",
-              Right: &compiler.Expression{
-                Left: &compiler.Literal{
-                  Pos: Position{Filename: "", Offset: 308, Line: 27, Column: 14},
-                  Reference: &"b",
-                },
-              },
-            },
+          Pos: Position{Filename: "", Offset: 700, Line: 56, Column: 3},
+          ReturnStatement: &compiler.ReturnStatement{
+            Pos: Position{Filename: "", Offset: 700, Line: 56, Column: 3},
+            Expression: a + b,
           },
         },
       },
@@ -163,83 +193,35 @@
   },
   Tests: []*compiler.Test{
     &compiler.Test{
-      Pos: Position{Filename: "", Offset: 313, Line: 30, Column: 1},
+      Pos: Position{Filename: "", Offset: 716, Line: 59, Column: 1},
       Name: "for equal or not equal",
       Statements: []*compiler.Statement{
         &compiler.Statement{
-          Pos: Position{Filename: "", Offset: 347, Line: 31, Column: 3},
+          Pos: Position{Filename: "", Offset: 750, Line: 60, Column: 3},
           AssertStatement: &compiler.AssertStatement{
-            Pos: Position{Filename: "", Offset: 347, Line: 31, Column: 3},
-            Expression: &compiler.Expression{
-              Left: &compiler.Literal{
-                Pos: Position{Filename: "", Offset: 354, Line: 31, Column: 10},
-                Int: &1,
-              },
-              Operator: &"==",
-              Right: &compiler.Expression{
-                Left: &compiler.Literal{
-                  Pos: Position{Filename: "", Offset: 359, Line: 31, Column: 15},
-                  Int: &1,
-                },
-                Right: &compiler.Expression{
-                  Left: &compiler.Literal{
-                    Pos: Position{Filename: "", Offset: 363, Line: 32, Column: 3},
-                    Reference: &"assert",
-                  },
-                  Right: &compiler.Expression{
-                    Left: &compiler.Literal{
-                      Pos: Position{Filename: "", Offset: 370, Line: 32, Column: 10},
-                      Int: &2,
-                    },
-                    Operator: &"==",
-                    Right: &compiler.Expression{
-                      Left: &compiler.Literal{
-                        Pos: Position{Filename: "", Offset: 375, Line: 32, Column: 15},
-                        Int: &2,
-                      },
-                      Right: &compiler.Expression{
-                        Left: &compiler.Literal{
-                          Pos: Position{Filename: "", Offset: 379, Line: 33, Column: 3},
-                          Reference: &"assert",
-                        },
-                        Right: &compiler.Expression{
-                          Left: &compiler.Literal{
-                            Pos: Position{Filename: "", Offset: 386, Line: 33, Column: 10},
-                            Int: &4,
-                          },
-                          Operator: &"==",
-                          Right: &compiler.Expression{
-                            Left: &compiler.Literal{
-                              Pos: Position{Filename: "", Offset: 391, Line: 33, Column: 15},
-                              Int: &4,
-                            },
-                            Right: &compiler.Expression{
-                              Left: &compiler.Literal{
-                                Pos: Position{Filename: "", Offset: 395, Line: 34, Column: 3},
-                                Reference: &"assert",
-                              },
-                              Right: &compiler.Expression{
-                                Left: &compiler.Literal{
-                                  Pos: Position{Filename: "", Offset: 402, Line: 34, Column: 10},
-                                  Int: &3,
-                                },
-                                Operator: &"!=",
-                                Right: &compiler.Expression{
-                                  Left: &compiler.Literal{
-                                    Pos: Position{Filename: "", Offset: 407, Line: 34, Column: 15},
-                                    Int: &13,
-                                  },
-                                },
-                              },
-                            },
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
+            Pos: Position{Filename: "", Offset: 750, Line: 60, Column: 3},
+            Expression: 1 == 1,
+          },
+        },
+        &compiler.Statement{
+          Pos: Position{Filename: "", Offset: 767, Line: 61, Column: 3},
+          AssertStatement: &compiler.AssertStatement{
+            Pos: Position{Filename: "", Offset: 767, Line: 61, Column: 3},
+            Expression: 2 == 2,
+          },
+        },
+        &compiler.Statement{
+          Pos: Position{Filename: "", Offset: 784, Line: 62, Column: 3},
+          AssertStatement: &compiler.AssertStatement{
+            Pos: Position{Filename: "", Offset: 784, Line: 62, Column: 3},
+            Expression: 4 == 4,
+          },
+        },
+        &compiler.Statement{
+          Pos: Position{Filename: "", Offset: 801, Line: 63, Column: 3},
+          AssertStatement: &compiler.AssertStatement{
+            Pos: Position{Filename: "", Offset: 801, Line: 63, Column: 3},
+            Expression: 3 != 13,
           },
         },
       },

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"strings"
 
 	"github.com/pyros2097/pine/compiler/op"
 )
@@ -44,6 +45,7 @@ type Emitter struct {
 	funcsCount       int
 	globalsCount     int
 	initial          bool
+	emitJs           bool
 }
 
 func NewEmitter(module *Module) *Emitter {
@@ -381,43 +383,84 @@ func (e *Emitter) EmitRuntime() {
 	e.GlobalsSection.Write([]byte{op.I32, 0x01, op.I32_CONST, 0x00, op.END}) // heap-next
 	e.globalsCount = 1
 }
+func (e *Emitter) BuildLookup() {
+	for _, t := range e.Module.Types {
+		e.types[t.Name] = &TypeData{
+			Name:  t.Name,
+			Value: "i32",
+		}
+	}
+	for i, fun := range e.Module.Functions {
+		if fun.Type == "test" {
+			fun.Name = "test_" + fun.Name
+		}
+		_, exists := e.funcs[fun.Name]
+		if exists {
+			panic(fmt.Sprintf("Function '%s' is already defined", fun.Name))
+		}
+		e.funcs[fun.Name] = &FuncData{
+			Index:  i,
+			Name:   fun.Name,
+			Params: map[string]*FuncParam{},
+		}
+		if fun.ReturnType != nil {
+			e.funcs[fun.Name].ReturnType = fun.ReturnType.Name
+		}
+		for pi, param := range fun.Parameters {
+			e.funcs[fun.Name].Params[param.Name] = &FuncParam{
+				Index: pi,
+				Name:  param.Name,
+				Type:  param.Value,
+			}
+		}
+	}
+}
 
-func (e *Emitter) EmitAll() (*bytes.Buffer, error) {
+// React.createElement(View, { name: "test" },
+//     React.createElement(View, null,
+//         React.createElement(Text, null, "Hello")),
+//     React.createElement(View, null,
+//         React.createElement(Text, null, "Hello")));
+
+func (e *Emitter) EmitJS() (*bytes.Buffer, error) {
+	buffer := bytes.NewBuffer(nil)
+	e.BuildLookup()
+	for _, fun := range e.Module.Functions {
+		params := []string{}
+		for _, param := range fun.Parameters {
+			params = append(params, param.Name)
+		}
+		buffer.WriteString(fmt.Sprintf("function %s(%s) {\n", fun.Name, strings.Join(params, ", ")))
+		for _, st := range fun.Statements {
+			if st.Assignment != nil {
+				buffer.WriteString(fmt.Sprintf("  const %s = %s;\n", st.Assignment.Name, st.Assignment.Expression.GoString()))
+			}
+			if st.EchoStatement != nil {
+			}
+			if st.ReturnStatement != nil {
+				buffer.WriteString(fmt.Sprintf("  return %s;\n", st.ReturnStatement.Expression.GoString()))
+			}
+		}
+		buffer.WriteString("}\n\n")
+	}
+	return buffer, nil
+}
+
+func (e *Emitter) EmitWASM() (*bytes.Buffer, error) {
 	// buffer := bytes.NewBuffer(nil)
 	// buffer.Write([]byte{0x00, 0x61, 0x73, 0x6d}) // WASM_BINARY_MAGIC
 	// buffer.Write([]byte{0x01, 0x00, 0x00, 0x00}) // WASM_BINARY_VERSION
 	// e.EmitMemory()
 	// e.EmitRuntime()
+	e.BuildLookup()
 
-	// for _, t := range e.Module.Types {
-	// 	e.types[t.Name] = &TypeData{
-	// 		Name:  t.Name,
-	// 		Value: "i32",
-	// 	}
-	// }
+	for _, t := range e.Module.Types {
+		e.types[t.Name] = &TypeData{
+			Name:  t.Name,
+			Value: "i32",
+		}
+	}
 	// for i, fun := range e.Module.Functions {
-	// 	if fun.Type == "test" {
-	// 		fun.Name = "test_" + fun.Name
-	// 	}
-	// 	_, exists := e.funcs[fun.Name]
-	// 	if exists {
-	// 		return nil, fmt.Errorf("Function '%s' is already defined", fun.Name)
-	// 	}
-	// 	e.funcs[fun.Name] = &FuncData{
-	// 		Index:  i,
-	// 		Name:   fun.Name,
-	// 		Params: map[string]*FuncParam{},
-	// 	}
-	// 	if fun.ReturnType != nil {
-	// 		e.funcs[fun.Name].ReturnType = fun.ReturnType.Name
-	// 	}
-	// 	for pi, param := range fun.Parameters {
-	// 		e.funcs[fun.Name].Params[param.Name] = &FuncParam{
-	// 			Index: pi,
-	// 			Name:  param.Name,
-	// 			Type:  param.Type.Name,
-	// 		}
-	// 	}
 	// 	err := e.EmitTypes(fun.Name)
 	// 	if err != nil {
 	// 		return nil, fmt.Errorf("Failed to emitTypes %v", err)

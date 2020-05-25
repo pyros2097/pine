@@ -1,40 +1,32 @@
 package main
 
-import (
-	"os"
-
-	"github.com/pyros2097/pine/compiler"
-
-	wasm "github.com/wasmerio/go-ext-wasm/wasmer"
-)
-
 func main() {
-	if len(os.Args) != 2 {
-		println("Usage: pine file.pine")
-		return
-	}
-	filename := os.Args[1]
-	nodes, err := compiler.ParseFile(filename)
-	if err != nil {
-		panic(err)
-	}
-	wasmData, err := compiler.NewEmitter(nodes).EmitAll()
-	if err != nil {
-		panic(err)
-	}
-	instance, err := wasm.NewInstance(wasmData.Bytes())
-	if err != nil {
-		panic(err)
-	}
-	defer instance.Close()
+	// if len(os.Args) != 2 {
+	// 	println("Usage: pine file.pine")
+	// 	return
+	// }
+	// filename := os.Args[1]
+	// nodes, err := compiler.ParseFile(filename)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// wasmData, err := compiler.NewEmitter(nodes).EmitAll()
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// instance, err := wasm.NewInstance(wasmData.Bytes())
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// defer instance.Close()
 
-	if _, ok := instance.Exports["main"]; !ok {
-		panic("You need to have a function named 'main' which takes no arguments and return none")
-	}
-	_, err = instance.Exports["main"]()
-	if err != nil {
-		panic(err)
-	}
+	// if _, ok := instance.Exports["main"]; !ok {
+	// 	panic("You need to have a function named 'main' which takes no arguments and return none")
+	// }
+	// _, err = instance.Exports["main"]()
+	// if err != nil {
+	// 	panic(err)
+	// }
 }
 
 // register_route("path", pathParameters, queryPameters, callback) will be in c

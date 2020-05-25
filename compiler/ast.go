@@ -3,7 +3,9 @@
 package compiler
 
 import (
+	"fmt"
 	"io/ioutil"
+	"strings"
 
 	"github.com/alecthomas/participle"
 	"github.com/alecthomas/participle/lexer"
@@ -15,6 +17,7 @@ type Module struct {
 	Imports   []*Import   `parser:"{ @@ }"`
 	Enums     []*Enum     `parser:"{ @@ }"`
 	Types     []*Type     `parser:"{ @@ }"`
+	Externs   []*Extern   `parser:"{ @@ }"`
 	Functions []*Function `parser:"{ @@ }"`
 	Tests     []*Test     `parser:"{ @@ }"`
 }
@@ -48,9 +51,16 @@ type ReturnType struct {
 	Name  string `parser:"@Ident"`
 }
 
+type Extern struct {
+	Pos        lexer.Position
+	Name       string      `parser:"\"extern\" @Ident"`
+	Parameters []TypeField `parser:"\"(\" [ @@ { \",\"  @@ } ] \")\""`
+	ReturnType *ReturnType `parser:"{ @@ }"`
+}
+
 type Function struct {
 	Pos        lexer.Position
-	Type       string       `parser:"@(\"extern\" | \"proc\" | \"method\")"`
+	Type       string       `parser:"@(\"proc\" | \"method\")"`
 	Name       string       `parser:"@Ident"`
 	Parameters []TypeField  `parser:"\"(\" [ @@ { \",\"  @@ } ] \")\""`
 	ReturnType *ReturnType  `parser:"{ @@ }"`
@@ -71,18 +81,7 @@ type Statement struct {
 	For             *ForStatement        `parser:"| @@"`
 	EchoStatement   *EchoStatement       `parser:"| @@"`
 	AssertStatement *AssertStatement     `parser:"| @@"`
-	ReturnStatement *Expression          `parser:"| @@"`
-	XmlDecl         *XmlDecl             `parser:"| @@"`
-}
-
-type XmlDecl struct {
-	Pos        lexer.Position
-	Name       string         `parser:"\"<\"@Ident"`
-	Parameters []*KeyValue    `parser:"[ @@ { @@ } ]"`
-	EndName    lexer.Position `parser:"\">\""`
-	Children   []*XmlDecl     `parser:"{ @@ }"`
-	Value      string         `parser:"{ @Ident }"` // Todo make this match with @String or Literal
-	Close      string         `parser:"\"<\"\"/\"@Ident\">\""`
+	ReturnStatement *ReturnStatement     `parser:"| @@"`
 }
 
 type KeyValue struct {
@@ -94,7 +93,7 @@ type KeyValue struct {
 type AssignmentStatement struct {
 	Pos   lexer.Position
 	Name  string             `parser:"@Ident"`
-	Value *AssignmentLiteral `parser:"\":\"\"=\" @@"`
+	Expression *Expression `parser:"\":\"\"=\" @@"`
 }
 
 type FuncCallStatement struct {
@@ -141,6 +140,20 @@ type Expression struct {
 	Right    *Expression `parser:"{ @@ }"`
 }
 
+func (e *Expression) GoString() string {
+	s := ""
+	if e.Left != nil {
+		s += e.Left.GoString()
+	}
+	if e.Operator != nil {
+		s += " " + *e.Operator
+	}
+	if e.Right != nil {
+		s += " " + e.Right.GoString()
+	}
+	return s
+}
+
 type ReturnStatement struct {
 	Pos        lexer.Position `parser:"\"return\""`
 	Expression *Expression    `parser:"{ @@ }"`
@@ -152,14 +165,10 @@ type EchoStatement struct {
 }
 
 type AssertStatement struct {
-	Pos        lexer.Position `parser:"\"assert\""`
+	Pos        lexer.Position `parser:"\"@\"\"assert\""`
 	Expression *Expression    `parser:"@@"`
 }
 
-type MapStatement struct {
-	Pos   lexer.Position
-	Value *MapLiteral `parser:"\"{\" { @@ [ \",\" ] } \"}\""`
-}
 
 type MapLiteral struct {
 	Pos   lexer.Position
@@ -169,61 +178,83 @@ type MapLiteral struct {
 
 type MapValue struct {
 	Pos     lexer.Position
-	Literal *AssignmentLiteral `parser:"@@"`
-	Value   *MapStatement      `parser:"| @@"`
+	Literal *Literal `parser:"@@"`
+	Value   *MapLiteral      `parser:"| @@"`
 }
 
-type AssignmentLiteral struct {
-	Pos     lexer.Position
-	Call    *FuncCallStatement `parser:"@@"`
-	Literal *Literal           `parser:"| @@"`
-	Map     *MapStatement      `parser:"| @@"`
+type XmlLiteral struct {
+	Pos        lexer.Position
+	Name       string         `parser:"\"<\"@Ident"`
+	Parameters []*KeyValue    `parser:"[ @@ { @@ } ]"`
+	EndName    lexer.Position `parser:"\">\""`
+	Children   []*XmlLiteral  `parser:"{ @@ }"`
+	Value      string         `parser:"{ @Ident }"` // Todo make this match with @String or Literal
+	Close      string         `parser:"\"<\"\"/\"@Ident\">\""`
+}
+
+
+func (x *XmlLiteral) toJS(space string) string {
+	s := space + "React.createElement(\n" + space + space + x.Name + ",\n" + space + space + "{"
+	for _, param := range x.Parameters {
+		s += `"` + param.Key + `"` + "=" + `"` + param.Value.GoString() + `", `
+	}
+	s += "},\n"
+	for _, c := range x.Children {
+		s += c.toJS(space+space) + ", "
+	}
+	s += space + ")\n"
+	return s
 }
 
 // Literal is a "union" type, where only one matching value will be present.
 type Literal struct {
 	Pos       lexer.Position
-	Nil       bool        `parser:"@\"nil\""`
-	Str       *string     `parser:"| @String"`
-	Int       *int        `parser:"| @Int"`
-	Float     *float32    `parser:"| @Float"`
-	Bool      *string     `parser:"| @( \"true\" | \"false\" )"`
-	Reference *string     `parser:"| @Ident { @\".\" @Ident }"`
-	List      []*Literal  `parser:"| \"[\" { @@ [ \",\" ] } \"]\""`
-	Params    []*Literal  `parser:"| \"(\" [ @@ { \",\" @@ } ] \")\""`
-	Sub       *Expression `parser:"| \"(\" @@ \")\""`
-	// Map       []*MapItem `| "{" { @@ [ "," ] } "}"`
+	Nil       bool       `parser:"@\"nil\""`
+	Str       *string    `parser:"| @String"`
+	Int       *int       `parser:"| @Int"`
+	Float     *float32   `parser:"| @Float"`
+	Bool      *string    `parser:"| @( \"true\" | \"false\" )"`
+	Reference *string    `parser:"| @Ident { @\".\" @Ident }"`
+	FuncCall  *FuncCallStatement `parser:"| @@"`
+	List      []*Literal `parser:"| \"[\" { @@ [ \",\" ] } \"]\""`
+	Map       []*MapLiteral `| "{" { @@ [ "," ] } "}"`
+	Params    []*Literal `parser:"| \"(\" [ @@ { \",\" @@ } ] \")\""`
+	Xml       *XmlLiteral   `parser:"| @@ "`
+	// Sub       *Expression `parser:"| \"(\" @@ \")\""`
 }
 
-// func (l *Literal) GoString() string {
-// 	switch {
-// 	case l.Str != nil:
-// 		return fmt.Sprintf("%q", *l.Str)
-// 	case l.Float != nil:
-// 		return fmt.Sprintf("%v", *l.Float)
-// 	case l.Int != nil:
-// 		return fmt.Sprintf("%v", *l.Int)
-// 	case l.Bool != nil:
-// 		return fmt.Sprintf("%v", *l.Bool)
-// 	case l.Reference != nil:
-// 		return fmt.Sprintf("%s", *l.Reference)
-// 	case l.Minus != nil:
-// 		return fmt.Sprintf("-%v", l.Minus)
-// 	case l.List != nil:
-// 		parts := []string{}
-// 		for _, e := range l.List {
-// 			parts = append(parts, e.GoString())
-// 		}
-// 		return fmt.Sprintf("[%s]", strings.Join(parts, ", "))
-// 		// case l.Map != nil:
-// 		// 	parts := map[string]string{}
-// 		// 	for _, e := range l.Map {
-// 		// 		parts[e.Key.GoString()] = e.Value.GoString()
-// 		// 	}
-// 		// 	return fmt.Sprintf("%#v", parts)
-// 	}
-// 	panic("unsupported?")
-// }
+func (l *Literal) GoString() string {
+	switch {
+	case l.Str != nil:
+		return fmt.Sprintf("%q", *l.Str)
+	case l.Float != nil:
+		return fmt.Sprintf("%v", *l.Float)
+	case l.Int != nil:
+		return fmt.Sprintf("%v", *l.Int)
+	case l.Bool != nil:
+		return fmt.Sprintf("%v", *l.Bool)
+	case l.Reference != nil:
+		return fmt.Sprintf("%s", *l.Reference)
+	// case l.Minus != nil:
+	// 	return fmt.Sprintf("-%v", l.Minus)
+	case l.List != nil:
+		parts := []string{}
+		for _, e := range l.List {
+			parts = append(parts, e.GoString())
+		}
+		return fmt.Sprintf("[%s]", strings.Join(parts, ", "))
+	case l.Map != nil:
+		return ""
+		// parts := map[string]string{}
+		// for _, e := range l.Map {
+		// 	parts[e.Value.Key.GoString()] = e.Value.Value.GoString()
+		// }
+		// return fmt.Sprintf("%#v", parts)
+	case l.Xml != nil:
+		return l.Xml.toJS("  ")
+	}
+	panic("unsupported? literal")
+}
 
 // type MapItem struct {
 // 	Pos   lexer.Position
