@@ -42,12 +42,11 @@ type Type struct {
 type TypeField struct {
 	Pos   lexer.Position
 	Name  string `parser:"@Ident"`
-	Value string `parser:"\":\" @Ident"`
+	Value string `parser:"@Ident"`
 }
 
 type ReturnType struct {
 	Pos   lexer.Position
-	Start string `parser:"\":\""`
 	Name  string `parser:"@Ident"`
 }
 

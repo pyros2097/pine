@@ -11,16 +11,16 @@ enum Position {
 }
 
 type User {
-  name: string
-  age: string
-  gender: string
-  address: string
-  createdAt: string
-  updatedAt: string
-  deletedAt: string
+  name string
+  age string
+  gender string
+  address string
+  createdAt string
+  updatedAt string
+  deletedAt string
 }
 
-method fullName(u: User) : string  {
+method fullName(u User)  string  {
   name := u.name 
   map := {
     "123": "123",
@@ -32,7 +32,7 @@ method fullName(u: User) : string  {
   return u.name + " " + u.age
 }
 
-proc Counter(a: int, b: int) : int  {
+proc Counter(a int, b int) int  {
   return (
     <View>
       <View>
@@ -49,7 +49,7 @@ proc Counter(a: int, b: int) : int  {
   )
 }
 
-proc adder(a: int, b: int) : int  {
+proc adder(a int, b int)  int  {
   if a < b {
     return a - b + b
   }

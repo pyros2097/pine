@@ -40,17 +40,18 @@ const validation: error = error("123")
 #### A. Enums
 
 ```pony
-enum Direction
-  | Left
-  | Right
-  | Up
-  | Down
+enum Direction {
+  Left
+  Right
+  Up
+  Down
+}
 ```
 
 #### B. Types
 
 ```golang
-type User
+type User {
   name: string
   age: string
   gender: string
@@ -58,6 +59,7 @@ type User
   createdAt: string
   updatedAt: string
   deletedAt: string
+}
 ```
 
 #### C. Strings
@@ -90,7 +92,7 @@ echo names.contains("Squidward") // ==> false
 Keys will always be strings. Keys are ordered by default.
 
 ```golang
-nums := map[int]{
+nums := {
     "one": 1,
     "two": 2
 }
@@ -104,9 +106,9 @@ echo nums["infinity"] // ==> nil
 ```golang
 type Operator proc(a int, b int) bool
 
-proc add(a int, b int) =
-  a + b
-
+proc add(a: int, b: int) {
+  return a + b
+}
 add(3, 5)
 add(b: 4, a: 1)
 ```
@@ -119,63 +121,59 @@ add(b: 4, a: 1)
 a := 10
 b := 20
 c := a > b ? 10 : a;
-if a < b:
+if a < b {
   echo "$a < $b"
-elif a > b:
+} elif a > b {
   echo "$a > $b"
-else:
+} else {
   echo "$a == $b"
+}
 ```
 
-#### B. match
-
-```pony
-c := 4
-match c:
-| 1 => _resize(y, x)
-| 2 => _processInput(c, x, y)
-| 3 => _processInput(c, x, y)
-| 4 => _processInput(c, x, y)
-| 255 => _exit()
-```
+#### B. switch
 
 #### 5. Loops
 
 #### A. Normal loops
 
 ```golang
-for i := 0; i < 10; i++:
+for i := 0; i < 10; i++ {
   echo i, v
+}
 ```
 
 #### B. Infinite Loop
 
 ```golang
-for:
+for {
   echo "infinite"
+}
 ```
 
 #### C. Loop with Condition
 
 ```golang
-for x > 5:
+for x > 5 {
   echo x
+}
 ```
 
 ## Array Iteration
 
 ```golang
 const nums := [1, 2, 3]
-for i, v  := range nums:
+for i, v  := range nums {
    echo i, v
+}
 ```
 
 ## Map Iteration
 
 ```golang
-const data := map[string]{"name": "krab"}
-for k, v  := range data:
+data := map[string]{"name": "krab"}
+for k, v  := range data {
   echo k, v
+}
 ```
 
 #### 6. Sugar
@@ -236,6 +234,6 @@ assert x == 2
 """
 Takes a, b
 """
-func add(a int, b int) {
+proc add(a: int, b: int) {
 }
 ```
