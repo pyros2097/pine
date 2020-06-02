@@ -40,25 +40,26 @@ const validation: error = error("123")
 #### A. Enums
 
 ```pony
-enum Direction {
+type Direction enum (
   Left
-  Right
-  Up
-  Down
-}
+  | Right
+)
 ```
 
 #### B. Types
 
 ```golang
-type User {
-  name: string
-  age: string
-  gender: string
-  address: string
-  createdAt: string
-  updatedAt: string
-  deletedAt: string
+type User struct (
+  name      string
+  age       string
+  gender    string
+  address   string
+  createdAt string
+  updatedAt string
+  deletedAt string
+  onCreate  (a string)
+  onUpdate  (b string)
+  onDelete  (c string)
 }
 ```
 
@@ -104,9 +105,9 @@ echo nums["infinity"] // ==> nil
 #### 3. Functions
 
 ```golang
-type Operator proc(a int, b int) bool
+type Operator (a int, b int) bool
 
-proc add(a: int, b: int) {
+const add = (a: int, b: int) => {
   return a + b
 }
 add(3, 5)
@@ -234,6 +235,6 @@ assert x == 2
 """
 Takes a, b
 """
-proc add(a: int, b: int) {
+const add = (a int, b int) => {
 }
 ```

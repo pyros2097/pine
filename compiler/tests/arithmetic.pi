@@ -1,26 +1,39 @@
 module main
 
-enum Direction {
-  Left
-  Right
+type Direction enum (
+  Left | Right
+)
+
+type Position enum (
+  Top | Bottom | Left | Right
+)
+
+type User struct (
+  name    string
+  setName (v string)
+)
+
+const createUser = (a string, b string) => {
+  a :=  {
+    name: "",
+    "setName": ""
+  }
+  return
 }
 
-enum Position {
-  Top
-  Bottom
+const User = (name string, callback (age (g string))) => {
+  fullName := "Mr. ${name}"
+  //return {
+  //  name: name,
+  //  fullName: fullName,
+  //  setName: proc(v string) {
+  //    name = v
+  //  }
+  //}
 }
 
-type User {
-  name string
-  age string
-  gender string
-  address string
-  createdAt string
-  updatedAt string
-  deletedAt string
-}
-
-method fullName(u User)  string  {
+const fullName = () string => {
+  ////name, fullName, setName := User(name: "123")
   name := u.name 
   map := {
     "123": "123",
@@ -32,7 +45,20 @@ method fullName(u User)  string  {
   return u.name + " " + u.age
 }
 
-proc Counter(a int, b int) int  {
+const newState = (value string) => {
+  // return {
+  //  value,
+  //  setState: proc(newValue string) {
+  //    name = newValue;
+  //  }
+  //}
+}
+
+const render = () => {
+  //value, setValue := newState(value: "test")
+}
+
+const Counter = (a int, b int) int =>  {
   return (
     <View>
       <View>
@@ -49,7 +75,7 @@ proc Counter(a int, b int) int  {
   )
 }
 
-proc adder(a int, b int)  int  {
+const adder = (a int, b int) int => {
   if a < b {
     return a - b + b
   }

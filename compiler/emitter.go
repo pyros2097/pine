@@ -391,9 +391,6 @@ func (e *Emitter) BuildLookup() {
 		}
 	}
 	for i, fun := range e.Module.Functions {
-		if fun.Type == "test" {
-			fun.Name = "test_" + fun.Name
-		}
 		_, exists := e.funcs[fun.Name]
 		if exists {
 			panic(fmt.Sprintf("Function '%s' is already defined", fun.Name))
@@ -407,10 +404,19 @@ func (e *Emitter) BuildLookup() {
 			e.funcs[fun.Name].ReturnType = fun.ReturnType.Name
 		}
 		for pi, param := range fun.Parameters {
-			e.funcs[fun.Name].Params[param.Name] = &FuncParam{
-				Index: pi,
-				Name:  param.Name,
-				Type:  param.Value,
+			if param.ValueField != nil {
+				e.funcs[fun.Name].Params[param.ValueField.Name] = &FuncParam{
+					Index: pi,
+					Name:  param.ValueField.Name,
+					Type:  param.ValueField.Type,
+				}
+			}
+			if param.FuncField != nil {
+				e.funcs[fun.Name].Params[param.FuncField.Name] = &FuncParam{
+					Index: pi,
+					Name:  param.FuncField.Name,
+					// Type:  param.FuncField.Parameters,
+				}
 			}
 		}
 	}
@@ -428,17 +434,18 @@ func (e *Emitter) EmitJS() (*bytes.Buffer, error) {
 	for _, fun := range e.Module.Functions {
 		params := []string{}
 		for _, param := range fun.Parameters {
-			params = append(params, param.Name)
+			params = append(params, param.toJS())
 		}
 		buffer.WriteString(fmt.Sprintf("function %s(%s) {\n", fun.Name, strings.Join(params, ", ")))
 		for _, st := range fun.Statements {
 			if st.Assignment != nil {
-				buffer.WriteString(fmt.Sprintf("  const %s = %s;\n", st.Assignment.Name, st.Assignment.Expression.GoString()))
+				buffer.WriteString(fmt.Sprintf("  const %s = %s;\n", st.Assignment.Name, st.Assignment.Expression.toJS()))
 			}
 			if st.EchoStatement != nil {
+				buffer.WriteString(fmt.Sprintf("  console.log(\"%s\");\n", st.EchoStatement.Expression.toJS()))
 			}
 			if st.ReturnStatement != nil {
-				buffer.WriteString(fmt.Sprintf("  return %s;\n", st.ReturnStatement.Expression.GoString()))
+				buffer.WriteString(fmt.Sprintf("  return %s;\n", st.ReturnStatement.Expression.toJS()))
 			}
 		}
 		buffer.WriteString("}\n\n")
@@ -454,12 +461,12 @@ func (e *Emitter) EmitWASM() (*bytes.Buffer, error) {
 	// e.EmitRuntime()
 	e.BuildLookup()
 
-	for _, t := range e.Module.Types {
-		e.types[t.Name] = &TypeData{
-			Name:  t.Name,
-			Value: "i32",
-		}
-	}
+	// for _, t := range e.Module.Types {
+	// 	e.types[t.Name] = &TypeData{
+	// 		Name:  t.Name,
+	// 		Value: "i32",
+	// 	}
+	// }
 	// for i, fun := range e.Module.Functions {
 	// 	err := e.EmitTypes(fun.Name)
 	// 	if err != nil {
