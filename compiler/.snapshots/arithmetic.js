@@ -1,5 +1,6 @@
 function createUser(a, b) {
-  const a = map[string]string{"name":"\"\"", "setName":"\"\""} return;
+  const a = {"name": "", "setName": "", }
+ return;
 }
 
 function User(name, callback) {
@@ -7,7 +8,9 @@ function User(name, callback) {
 }
 
 function fullName() {
-  const name = u.name map := map[string]string{"123":"\"123\"", "444":"map[string]string{\"444\":\"\\\"444\\\"\"}", "test":"u.name"} return u.name + " " + u.age;
+  const map = {"123": "123", "444": {"444": "444", }
+, "test": u.name, }
+ return u.name + " " + u.age;
 }
 
 function newState(value) {
@@ -17,6 +20,27 @@ function render() {
 }
 
 function Counter(a, b) {
+  return   React.createElement(
+    View,
+    {},
+    React.createElement(
+        View,
+        {},
+        React.createElement(
+                Text,
+                {},
+        )
+,     )
+,     React.createElement(
+        View,
+        {},
+        React.createElement(
+                Text,
+                {},
+        )
+,     )
+,   )
+;
 }
 
 function adder(a, b) {

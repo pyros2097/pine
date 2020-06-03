@@ -119,18 +119,6 @@ type Statement struct {
 	ReturnStatement *ReturnStatement     `parser:"| @@"`
 }
 
-type KeyValue struct {
-	Pos   lexer.Position
-	Key   string   `parser:"@Ident"`
-	Value *Literal `parser:"\"=\" @@"`
-}
-
-type AssignmentStatement struct {
-	Pos        lexer.Position
-	Name       string      `parser:"@Ident"`
-	Expression *Expression `parser:"\":\"\"=\" @@"`
-}
-
 type FuncCallStatement struct {
 	Pos    lexer.Position
 	Name   string     `parser:"@Ident"`
@@ -171,11 +159,11 @@ type ForIteratorStatement struct {
 
 type Expression struct {
 	// TODO: fix this
-	start    *string     `parser:"\"(\""`
+	// start    *string     `parser:"\"(\""`
 	Left     *Literal    `parser:"@@"`
 	Operator *string     `parser:"{ @(\"+\" | \"-\" | \"*\" | \"/\" | \"<=\" | \">=\" | \"=\"\"=\" | \"<\" | \">\" | \":\"\"=\" |\"!\"\"=\" | \"=\") }"`
 	Right    *Expression `parser:"{ @@ }"`
-	end      *string     `parser:"\")\""`
+	// end      *string     `parser:"\")\""`
 }
 
 func (e *Expression) toJS() string {
@@ -192,19 +180,60 @@ func (e *Expression) toJS() string {
 	return s
 }
 
+// An Expression has operator
+// assignment/return can be to an expression/xml/list/map/func since these don't have operators
+
+type AssignmentLiteral struct {
+	Pos        lexer.Position
+	Xml        *XmlLiteral `parser:"@@"`
+	Expression *Expression `parser:"| @@"`
+	Literal    *Literal    `parser:"| @@"`
+}
+
+func (a *AssignmentLiteral) toJS() string {
+	if a.Xml != nil {
+		return a.Xml.toJS("  ")
+	}
+	if a.Expression != nil {
+		return a.Expression.toJS()
+	}
+	if a.Literal != nil {
+		return a.Literal.toJS()
+	}
+	panic("Couldn't parse assignment literal")
+}
+
+type AssignmentStatement struct {
+	Pos               lexer.Position
+	Name              string             `parser:"@Ident \":\"\"=\""`
+	AssignmentLiteral *AssignmentLiteral `parser:"@@"`
+}
+
+func (a *AssignmentStatement) toJS() string {
+	return fmt.Sprintf("  const %s = %s;\n", a.Name, a.AssignmentLiteral.toJS())
+}
+
 type ReturnStatement struct {
-	Pos        lexer.Position `parser:"\"return\""`
-	Expression *Expression    `parser:"{ @@ }"`
+	Pos               lexer.Position     `parser:"\"return\""`
+	AssignmentLiteral *AssignmentLiteral `parser:"{ @@ }"`
+}
+
+func (r *ReturnStatement) toJS() string {
+	return fmt.Sprintf("  return %s;\n", r.AssignmentLiteral.toJS())
 }
 
 type EchoStatement struct {
-	Pos        lexer.Position `parser:"\"echo\""`
-	Expression *Expression    `parser:"@@"`
+	Pos               lexer.Position     `parser:"\"echo\""`
+	AssignmentLiteral *AssignmentLiteral `parser:"@@"`
+}
+
+func (e *EchoStatement) toJS() string {
+	return fmt.Sprintf("  console.log(\"%s\");\n", e.AssignmentLiteral.toJS())
 }
 
 type AssertStatement struct {
-	Pos        lexer.Position `parser:"\"@\"\"assert\""`
-	Expression *Expression    `parser:"@@"`
+	Pos               lexer.Position     `parser:"\"@\"\"assert\""`
+	AssignmentLiteral *AssignmentLiteral `parser:"@@"`
 }
 
 type MapLiteral struct {
@@ -223,6 +252,12 @@ type XmlLiteral struct {
 	Close      string         `parser:"\"<\"\"/\"@Ident\">\""`
 }
 
+type KeyValue struct {
+	Pos   lexer.Position
+	Key   string   `parser:"@Ident"`
+	Value *Literal `parser:"\"=\" @@"`
+}
+
 func (x *XmlLiteral) toJS(space string) string {
 	s := space + "React.createElement(\n" + space + space + x.Name + ",\n" + space + space + "{"
 	for _, param := range x.Parameters {
@@ -238,18 +273,19 @@ func (x *XmlLiteral) toJS(space string) string {
 
 // Literal is a "union" type, where only one matching value will be present.
 type Literal struct {
-	Pos       lexer.Position
-	Nil       bool               `parser:"@\"nil\""`
-	Str       *string            `parser:"| @String"`
-	Int       *int               `parser:"| @Int"`
-	Float     *float32           `parser:"| @Float"`
-	Bool      *string            `parser:"| @( \"true\" | \"false\" )"`
+	Pos   lexer.Position
+	Nil   bool     `parser:"@\"nil\""`
+	Str   *string  `parser:"| @String"`
+	Int   *int     `parser:"| @Int"`
+	Float *float32 `parser:"| @Float"`
+	Bool  *string  `parser:"| @( \"true\" | \"false\" )"`
+	// TODO: return,const,echoo,assert is getting parsed as exp because those keywords are becoming references
 	Reference *string            `parser:"| @Ident { @\".\" @Ident }"`
 	FuncCall  *FuncCallStatement `parser:"| @@"`
 	List      []*Literal         `parser:"| \"[\" { @@ [ \",\" ] } \"]\""`
 	Map       []*MapLiteral      `parser:"| \"{\" { @@ [ \",\" ] } \"}\""`
 	Params    []*Literal         `parser:"| \"(\" [ @@ { \",\" @@ } ] \")\""`
-	Xml       *XmlLiteral        `parser:"| @@ "`
+	// Xml       *XmlLiteral        `parser:"| @@ "`
 	// Sub       *Expression `parser:"| \"(\" @@ \")\""`
 }
 
@@ -274,13 +310,14 @@ func (l *Literal) toJS() string {
 		}
 		return fmt.Sprintf("[%s]", strings.Join(parts, ", "))
 	case l.Map != nil:
-		parts := map[string]string{}
+		parts := "{"
 		for _, e := range l.Map {
-			parts[*e.Key] = e.Value.toJS()
+			parts += "\"" + *e.Key + "\": " + e.Value.toJS() + ", "
 		}
-		return fmt.Sprintf("%#v", parts)
-	case l.Xml != nil:
-		return l.Xml.toJS("  ")
+		parts += "}\n"
+		return parts
+		// case l.Xml != nil:
+		// 	return l.Xml.toJS("  ")
 	}
 	panic("unsupported? literal")
 }

@@ -439,13 +439,13 @@ func (e *Emitter) EmitJS() (*bytes.Buffer, error) {
 		buffer.WriteString(fmt.Sprintf("function %s(%s) {\n", fun.Name, strings.Join(params, ", ")))
 		for _, st := range fun.Statements {
 			if st.Assignment != nil {
-				buffer.WriteString(fmt.Sprintf("  const %s = %s;\n", st.Assignment.Name, st.Assignment.Expression.toJS()))
+				buffer.WriteString(st.Assignment.toJS())
 			}
 			if st.EchoStatement != nil {
-				buffer.WriteString(fmt.Sprintf("  console.log(\"%s\");\n", st.EchoStatement.Expression.toJS()))
+				buffer.WriteString(st.EchoStatement.toJS())
 			}
 			if st.ReturnStatement != nil {
-				buffer.WriteString(fmt.Sprintf("  return %s;\n", st.ReturnStatement.Expression.toJS()))
+				buffer.WriteString(st.ReturnStatement.toJS())
 			}
 		}
 		buffer.WriteString("}\n\n")

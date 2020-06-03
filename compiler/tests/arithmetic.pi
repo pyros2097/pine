@@ -14,7 +14,7 @@ type User struct (
 )
 
 const createUser = (a string, b string) => {
-  a :=  {
+  a := {
     name: "",
     "setName": ""
   }
@@ -34,7 +34,7 @@ const User = (name string, callback (age (g string))) => {
 
 const fullName = () string => {
   ////name, fullName, setName := User(name: "123")
-  name := u.name 
+  // name := u.name 
   map := {
     "123": "123",
     "444": {
@@ -58,9 +58,9 @@ const render = () => {
   //value, setValue := newState(value: "test")
 }
 
+// TODO: This () doesn't let jsx to be parsed
 const Counter = (a int, b int) int =>  {
-  return (
-    <View>
+  return <View>
       <View>
         <Text>
         Hello
@@ -72,13 +72,12 @@ const Counter = (a int, b int) int =>  {
         </Text>
       </View>
     </View>
-  )
 }
 
 const adder = (a int, b int) int => {
-  if a < b {
-    return a - b + b
-  }
+  //if a < b {
+  //  return a - b + b
+  //}
   return a + b
 }
 
