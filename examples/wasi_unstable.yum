@@ -1,4 +1,0 @@
-module wasi_unstable
-
-extern fd_write(a: int, b: int, c: int, d: int): int
-

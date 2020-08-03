@@ -10,6 +10,7 @@ require (
 	github.com/alecthomas/participle v0.4.1
 	github.com/alecthomas/repr v0.0.0-20181024024818-d37bc2a10ba1
 	github.com/drom/LEB128 v0.0.0-20170517063658-5138cab8212b // indirect
+	github.com/elliotchance/pie v1.37.0 // indirect
 	github.com/hedzr/cmdr v1.6.20
 	github.com/mattn/go-isatty v0.0.11 // indirect
 	github.com/perlin-network/life v0.0.0-20191203030451-05c0e0f7eaea
