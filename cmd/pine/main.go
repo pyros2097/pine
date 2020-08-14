@@ -76,6 +76,8 @@ type Module struct {
 	Ast []Node `{ @@ }`
 }
 
+// all functions support named parameters by default
+
 func main() {
 	parser := participle.MustBuild(&Module{})
 	tree := &Module{}
