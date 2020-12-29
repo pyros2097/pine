@@ -30,9 +30,22 @@ type Defn struct {
 	Body   []Expr   `{ @@ } ")"`
 }
 
+type LHS struct {
+	Params  *Params  `@@`
+	Literal *Literal `| @@`
+}
+
+func (e *LHS) JS(indent string) string {
+	if e.Literal != nil {
+		return e.Literal.JS(indent)
+	} else {
+		return "params"
+	}
+}
+
 type Expr struct {
 	Op  *string  `"(" @(Ident { "/" Ident} | "+" | "-" | "*" | "/" | "<=" | ">=" | "=""=" | "<" | ">" | ":""=" |"!""=" | "=")`
-	LHS *Literal `@@`
+	LHS *LHS     `@@`
 	RHS *Literal `{ @@ } ")"`
 }
 
@@ -72,11 +85,26 @@ type Struct struct {
 	Fields []*Field `[ @@ { @@ } ] ")"`
 }
 
+type Param struct {
+	Key   string   `":"@Ident`
+	Value *Literal `@@`
+}
+
+type Params struct {
+	Values []*Param `[ @@ {  @@ } ]`
+}
+
+type Array struct {
+	Value []*Literal `"["[ @@ {  @@ } ] "]"`
+}
+
 type Literal struct {
 	Nil       bool     `@"nil"`
+	Label     *string  `| ":"@Ident`
 	Reference *string  `| @Ident`
 	String    *string  `| @String`
 	Number    *float64 `| @(Float | Int)`
+	Array     *Array   `| @@`
 	Expr      *Expr    `| @@`
 }
 
@@ -84,6 +112,8 @@ func (l *Literal) JS(indent string) string {
 	if l != nil {
 		if l.Nil {
 			return "null"
+		} else if l.Label != nil {
+			return *l.Label
 		} else if l.Reference != nil {
 			return *l.Reference
 		} else if l.String != nil {
@@ -133,9 +163,14 @@ func main() {
 	(def user1 "hello")
 	(def user2 123.12)
 	(def user3 144)
+
+	(defn onclick [index update]
+	  (set index "123"))
+
 	(defn show/dir [dir]
 		(var index (usestate 10))
-		(html/div dir))
+		(col :class ["test" "123"] 
+		  (text "hello")))
 	`), tree)
 	if err != nil {
 		panic(err)
