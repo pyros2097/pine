@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"fmt"
+	"strings"
 
 	"github.com/alecthomas/participle"
 	"github.com/alecthomas/participle/lexer"
@@ -34,6 +36,21 @@ type Expr struct {
 	RHS *Literal `{ @@ } ")"`
 }
 
+func (e *Expr) JS(indent string) string {
+	switch *e.Op {
+	case "+", "-", "*", "/", "^", "%", ">", "<", ">=", "<=", "==", "!=":
+		return "(" + e.LHS.JS("") + " " + *e.Op + " " + e.RHS.JS("") + ")"
+	case "if":
+		return indent + "if " + e.LHS.JS("") + " {\n" + e.RHS.JS(indent+"  ") + "\n" + indent + "}"
+	case "var":
+		return indent + "var " + e.LHS.JS("") + " = " + e.RHS.JS("")
+	default:
+		// assume func call
+		// all functions support named parameters by default
+		return indent + strings.Replace(*e.Op, "/", "_", -1) + "(" + e.LHS.JS(indent) + "" + e.RHS.JS(indent) + ")"
+	}
+}
+
 type Field struct {
 	Name string `":" @Ident`
 	Type string "@Ident"
@@ -63,6 +80,23 @@ type Literal struct {
 	Expr      *Expr    `| @@`
 }
 
+func (l *Literal) JS(indent string) string {
+	if l != nil {
+		if l.Nil {
+			return "null"
+		} else if l.Reference != nil {
+			return *l.Reference
+		} else if l.String != nil {
+			return *l.String
+		} else if l.Number != nil {
+			return fmt.Sprintf("%f", *l.Number)
+		} else {
+			return indent + l.Expr.JS(indent+"  ")
+		}
+	}
+	return ""
+}
+
 type Node struct {
 	Import *Import `@@`
 	Def    *Def    `| @@ `
@@ -75,8 +109,6 @@ type Module struct {
 	Pos lexer.Position
 	Ast []Node `{ @@ }`
 }
-
-// all functions support named parameters by default
 
 func main() {
 	parser := participle.MustBuild(&Module{})
@@ -95,15 +127,15 @@ func main() {
 	  :age  float min(0) max(150))
 
 	(defn min [s v msg]
-	  (if (+ (string/length s) v)
+	  (if (> (string/length s) v)
 	  	(raise msg)))
 
 	(def user1 "hello")
 	(def user2 123.12)
 	(def user3 144)
 	(defn show/dir [dir]
+		(var index (usestate 10))
 		(html/div dir))
-
 	`), tree)
 	if err != nil {
 		panic(err)
@@ -122,7 +154,14 @@ func main() {
 			}
 			js.WriteString("\n")
 			js.WriteString("const " + d.Name + " = (" + params + ") => {\n")
-			js.WriteString("\n}\n")
+			for i, b := range d.Body {
+				if i == len(d.Body)-1 && *b.Op != "if" {
+					js.WriteString("  return ")
+				}
+				js.WriteString(b.JS("  "))
+				js.WriteString("\n")
+			}
+			js.WriteString("}\n")
 		}
 		if s := a.Struct; s != nil {
 			params := ""
