@@ -39,7 +39,13 @@ func (e *LHS) JS(indent string) string {
 	if e.Literal != nil {
 		return e.Literal.JS(indent)
 	} else {
-		return "params"
+		b := ""
+		for _, v := range e.Params.Values {
+			if v.Value != nil {
+				b += v.Key + v.Value.JS("") + ","
+			}
+		}
+		return b
 	}
 }
 
@@ -95,7 +101,7 @@ type Params struct {
 }
 
 type Array struct {
-	Value []*Literal `"["[ @@ {  @@ } ] "]"`
+	Values []*Literal `"["[ @@ {  @@ } ] "]"`
 }
 
 type Literal struct {
@@ -117,9 +123,15 @@ func (l *Literal) JS(indent string) string {
 		} else if l.Reference != nil {
 			return *l.Reference
 		} else if l.String != nil {
-			return *l.String
+			return `"` + *l.String + `"`
 		} else if l.Number != nil {
 			return fmt.Sprintf("%f", *l.Number)
+		} else if l.Array != nil {
+			b := ""
+			for _, v := range l.Array.Values {
+				b += v.JS("")
+			}
+			return b
 		} else {
 			return indent + l.Expr.JS(indent+"  ")
 		}

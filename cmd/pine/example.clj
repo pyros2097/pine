@@ -33,9 +33,33 @@
 (defn show/dir [dir]
   (html/div dir))
 
-(defn appun [f & ms]
-  (when (every? some? ms)
-    (apply f ms)))
+; (defn appun [f & ms]
+;   (when (every? some? ms)
+;     (apply f ms)))
+  
+; (appun + 1 2 3)    #_=> 6
+; (appun + 1 2 nil)  #_=> nil
+
+; (let [input {:a 1 :b 2 :c {:d 4 :e 5 :f {:h 7}}}]
+;   (some-> input :c :f :h inc))
+; user> 8
+
+; (let [input {:a 1 :b 2 :c {:d 4 :e 5 :f {:h 7}}}]
+;   (some-> input :c :z :h inc))
+
+; user> nil
+
+; (let [input {:a 1 :b 2 :c {:d 4 :e 5 :f {:h 7}}}]
+;   (-> input :c :z :h inc))
+
+; user> NullPointerException   clojure.lang.Numbers.ops (Numbers.java:1013)
+
+; (defn baz [a b & {:keys [c d] :or {c 10 d 20}}]
+;          (* a b c d))
+
+;  (defn boo [a b & {:keys [c d] :or {c 10 d 20} :as all-specified}]
+;           (println all-specified)
+;           (* a b c d))
 
 (defn use-state [initial]
   # (def key (get :componentIndex))
@@ -73,3 +97,5 @@
 (test "for-equal-or-not"
   (assert 1 == 2)
   (assert 2 == 14))
+
+		; # (html/div :class [:flex-1 :align-items] :click 
