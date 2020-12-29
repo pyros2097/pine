@@ -25,14 +25,35 @@ default and targets webassembly.
 
 #### 1. Basic Types
 
-```golang
-const nerd: bool = false
-const template: string = "hello world"
-const age: int = 21
-const pi: float = 3.14
-const token: byte = 0x05
-const data: string = nil
-const validation: error = error("123")
+```lisp
+	(use jaylib)
+	(use std)
+	(use lala)
+
+	(enum direction
+	  :left
+	  :right)
+
+	(struct user
+	  :name str min(10) max(20) range(10 120)
+	  :age  float min(0) max(150))
+
+	(defn min [s v msg]
+	  (if (+ (string/length s) v)
+	  	(raise msg)))
+
+	(var user1 "hello")
+	(var user2 123.12)
+	(var user3 144)
+
+	(defn show/dir [dir]
+		(html/div dir))
+
+  (defn appun [f & ms]
+    (when (every? some? ms)
+      (apply f ms)))
+
+
 ```
 
 #### 2. Reference Types

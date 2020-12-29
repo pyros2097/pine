@@ -1,3 +1,7 @@
+(use jaylib)
+(use std)
+(use lala)
+
 (enum direction
   :left
   :right)
@@ -9,13 +13,29 @@
   :right)
 
 (struct user
-  :name str required min(10) max(10) regex("[a-z]")
-  :year int required min(0) max(150))
+  :name str required min(10) max(10) regex("[a-z]")  
+  :year int required min(0) max(150)
+  :dir direction
+  :pos position)
 
-(defn user/fullname [u] 
+(defn user/fullname [u]
   (`Mr. ${u.name}`))
 
+(defn min [s v msg]
+  (if (+ (string/length s) v)
+    (raise msg)))
+
+(var user1 "hello")
+(var user2 123.12)
+(var user3 144)
 (def state {})
+
+(defn show/dir [dir]
+  (html/div dir))
+
+(defn appun [f & ms]
+  (when (every? some? ms)
+    (apply f ms)))
 
 (defn use-state [initial]
   # (def key (get :componentIndex))
